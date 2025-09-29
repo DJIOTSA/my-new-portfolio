@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, X, Download } from 'lucide-react';
+import { Download, Menu, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -58,7 +58,7 @@ const Header: React.FC = () => {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="text-xl font-bold text-blue-700">
-            Christian Daryn
+            Djiotsa
           </div>
 
           {/* Desktop Navigation */}

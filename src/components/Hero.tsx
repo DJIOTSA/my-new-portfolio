@@ -1,5 +1,5 @@
+import { Linkedin, Mail, MapPin, Phone } from 'lucide-react';
 import React from 'react';
-import { MapPin, Mail, Phone, Linkedin } from 'lucide-react';
 
 const Hero: React.FC = () => {
   return (
@@ -8,8 +8,8 @@ const Hero: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-center lg:text-left">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Djiotsa Djouake <br />
-              <span className="text-blue-700">Christian Daryn</span>
+              Djiotsa <br />
+              <span className="text-blue-700">Christian</span>
             </h1>
             
             <p className="text-xl text-gray-600 mb-8">
@@ -54,9 +54,9 @@ const Hero: React.FC = () => {
             <div className="relative">
               <div className="w-80 h-80 rounded-full overflow-hidden border-8 border-white shadow-2xl">
                 <img
-                  src="https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400"
-                  alt="Christian Daryn"
-                  className="w-full h-full object-cover"
+                  src="profile.webp"
+                  alt="Christian"
+                  className="w-full object-cover"
                 />
               </div>
               <div className="absolute -bottom-4 -right-4 bg-emerald-500 text-white p-4 rounded-full">

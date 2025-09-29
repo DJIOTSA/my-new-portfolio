@@ -1,7 +1,10 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Linkedin, Clock, Globe } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+import { Globe, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
+import React, { useRef } from 'react';
 
 const Contact: React.FC = () => {
+  const form = useRef<HTMLFormElement>(null);
+
   const contactInfo = [
     {
       icon: <Mail className="w-6 h-6" />,
@@ -24,7 +27,7 @@ const Contact: React.FC = () => {
     {
       icon: <MapPin className="w-6 h-6" />,
       label: 'Location',
-      value: 'Douala, Cameroon',
+      value: 'Yaounde, Cameroon',
       href: null
     },
     {
@@ -34,6 +37,30 @@ const Contact: React.FC = () => {
       href: null
     }
   ];
+
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.current) return;
+
+    emailjs
+      .sendForm(
+        "service_elgiazj",   // replace with your EmailJS service ID
+        "template_dqppn5c",  // replace with your EmailJS template ID
+        form.current,
+        "HcQt66_RE4ZQ4nSA1"    // replace with your EmailJS public key
+      )
+      .then(
+        (result) => {
+          console.log("Email sent:", result.text);
+          alert("Message sent successfully!");
+        },
+        (error) => {
+          console.error("Email send error:", error.text);
+          alert("Failed to send message.");
+        }
+      );
+  };
 
   return (
     <section id="contact" className="py-20 bg-gray-900 text-white">
@@ -80,7 +107,23 @@ const Contact: React.FC = () => {
 
           <div className="bg-gray-800 p-8 rounded-lg">
             <h3 className="text-2xl font-bold mb-6">Quick Contact</h3>
-            <form className="space-y-6">
+            <form ref={form} onSubmit={handleSubmit} className="space-y-6">
+              <div className='hidden'>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value="Quick Contact"
+                  className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  id="time"
+                  name="time"
+                  value={new Date().toISOString()}
+                  className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                   Name
@@ -88,6 +131,7 @@ const Contact: React.FC = () => {
                 <input
                   type="text"
                   id="name"
+                  name="name"
                   className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Your name"
                 />
@@ -99,6 +143,7 @@ const Contact: React.FC = () => {
                 <input
                   type="email"
                   id="email"
+                  name="email"
                   className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="your@email.com"
                 />
@@ -109,6 +154,7 @@ const Contact: React.FC = () => {
                 </label>
                 <textarea
                   id="message"
+                  name="message"
                   rows={4}
                   className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Tell me about your project..."

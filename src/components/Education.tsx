@@ -1,16 +1,16 @@
+import { Award, GraduationCap } from 'lucide-react';
 import React from 'react';
-import { GraduationCap, Award } from 'lucide-react';
 
 const Education: React.FC = () => {
   const education = [
     {
       degree: 'Bachelor of Engineering in Software Engineering',
-      institution: 'University of Buea',
+      institution: 'University of Buea, Faculty of Engineering and Technology (FET)',
       gpa: '3.37/4',
       type: 'degree'
     },
     {
-      degree: "Bachelor's in Physics Science",
+      degree: "Bachelor of Science in Physics (Level 1 completed)",
       institution: 'University of Dschang',
       type: 'degree'
     }
