@@ -21,8 +21,8 @@ const Header: React.FC = () => {
 
   const downloadPDF = () => {
     const link = document.createElement('a');
-    link.href = 'Djiotsa_Christian_Portfolio_final.pdf'; // file in /public
-    link.download = 'Christian_Djiotsa_Portfolio.pdf'; // optional: set download name
+    link.href = 'DjiotsaChristianResume(2).pdf'; // file in /public
+    link.download = 'Christian_Djiotsa_resume.pdf'; // optional: set download name
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -34,9 +34,9 @@ const Header: React.FC = () => {
     }`}>
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="text-xl font-bold text-blue-700">
+          <a href='#' className="text-xl font-bold text-blue-700">
             Djiotsa
-          </div>
+          </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
