@@ -1,5 +1,5 @@
-import React from 'react';
 import { Calendar, MapPin } from 'lucide-react';
+import React from 'react';
 
 const Experience: React.FC = () => {
   const experiences = [
@@ -8,11 +8,28 @@ const Experience: React.FC = () => {
       company: 'Ultrasoft Technologies SARL',
       location: 'Yaoundé, Cameroon',
       period: 'February 2025 – Present',
+      description:[
+        "Developed and optimized web and mobile applications for clients in various sectors.",
+        "Worked closely with marketing and UX teams to design user-centric solutions.",
+        "Performed rigorous testing, debugging, and performance optimization across applications.",
+        "Contributed to building scalable backend services for secure transactions, data management, and workflow automation.",
+        "Integrated third-party services and APIs to expand application functionalities and streamline workflows.",
+        "Implemented RESTful APIs to enhance communication between frontend and backend services, improving data retrieval efficiency by 30%."
+    ],
+      current: true
+    },
+    {
+      title: 'Data Scientist Apprenticeship (Learning Experience)',
+      company: 'DataCamp',
+      location: 'Remote',
+      period: 'January 2025 – Present',
       description: [
-        'Developed and optimized web and mobile applications for clients in various sectors.',
-        'Worked closely with marketing and UX teams to design user-centric solutions.',
-        'Performed rigorous testing, debugging, and performance optimization across applications.',
-        'Contributed to building scalable backend services for secure transactions, data management, and workflow automation.'
+          "Gaining hands-on experience in data analysis, visualization, and interpretation.",
+          "Learning to clean, preprocess, and transform datasets for machine learning tasks.",
+          "Exploring statistical modeling, predictive analytics, and data-driven decision-making.",
+          "Practicing implementation of machine learning algorithms and evaluation metrics.",
+          "Building small projects to apply Python, data manipulation, and visualization skills.",
+          "Understanding workflow optimization and reproducible research practices in real-world scenarios."
       ],
       current: true
     },
@@ -20,33 +37,40 @@ const Experience: React.FC = () => {
       title: 'DevOps Engineer',
       company: 'HNG Tech',
       location: 'Remote',
-      period: 'January 2025 – Present',
+      period: 'January 2025 – March 2025',
       description: [
         'Implemented continuous integration and continuous deployment (CI/CD) pipelines to streamline development workflows.',
         'Managed cloud infrastructure and automated deployment processes to ensure scalability and reliability.'
       ],
-      current: true
+      current: false
     },
     {
-      title: 'Data Scientist',
-      company: 'DataCamp',
-      location: 'Remote',
-      period: 'January 2025 – Present',
+      title: 'Sofware Engineer',
+      company: 'Zepstra LTD',
+      locaton: 'Buea',
+      period: 'June 2023 - December 2023',
       description: [
-        'Analyzed and interpreted complex datasets to provide actionable insights.',
-        'Developed predictive models and machine learning algorithms to support data-driven decision-making.'
+          "Developed and optimized web and mobile applications tailored to client needs in diverse industries, enhancing user experience and engagement.",
+          "Collaborated with marketing and UX teams to design intuitive, user-centric software solutions that increased customer satisfaction.",
+          "Engineered scalable backend services for secure transactions, efficient data management, and automated workflows.",
+          "Performed comprehensive testing, debugging, and performance tuning to ensure robust and high-performing applications.",
+          "Implemented RESTful APIs and integrated third-party services to enhance application functionality and user experience."
       ],
-      current: true
+      current: false,
     },
     {
-      title: 'Software Developer',
-      company: 'Hackerton',
-      location: 'Remote',
+      title: 'Hackerton & Bootcamp',
+      company: 'Silicon Montain, Tech Chantier,...',
+      location: 'Remote & Onsite',
       period: 'Previous Role',
       description: [
-        'Participated in designing and maintaining web applications, focusing on improving usability and efficiency.',
-        'Collaborated with teams to implement client requirements into actionable software solutions.'
-      ],
+        "Participated in collaborative hackathons to solve real-world problems using software development skills.",
+        "Gained hands-on experience in rapid prototyping, coding, and debugging under time constraints.",
+        "Collaborated with teams to design and implement practical solutions, improving teamwork and project management skills.",
+        "Learned best practices in software engineering, version control, and project deployment.",
+        "Completed focused bootcamp sessions covering fullstack development, mobile applications, and modern programming workflows.",
+        "Built small projects that reinforce practical understanding of web and mobile development concepts."
+    ],
       current: false
     }
   ];

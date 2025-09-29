@@ -21,8 +21,8 @@ const Header: React.FC = () => {
 
   const downloadPDF = () => {
     const link = document.createElement('a');
-    link.href = 'Djiotsa_Christian_Portfolio.docx'; // file in /public
-    // link.download = 'Christian_Daryn_Portfolio.pdf'; // optional: set download name
+    link.href = 'Djiotsa_Christian_Portfolio_final.pdf'; // file in /public
+    link.download = 'Christian_Djiotsa_Portfolio.pdf'; // optional: set download name
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

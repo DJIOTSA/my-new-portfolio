@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
             Made with <Heart className="w-4 h-4 text-red-500 mx-1" /> by Christian Daryn
           </p>
           <p className="text-gray-400 text-sm">
-            © 2025 Djiotsa Djouake Christian Daryn. All rights reserved.
+            © 2025 Djiotsa Christian. All rights reserved.
           </p>
         </div>
       </div>

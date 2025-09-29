@@ -45,10 +45,10 @@ const Contact: React.FC = () => {
 
     emailjs
       .sendForm(
-        "service_elgiazj",   // replace with your EmailJS service ID
-        "template_dqppn5c",  // replace with your EmailJS template ID
+        import.meta.env.VITE_EMAILJS_SERVICE_ID || '',  
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',  
         form.current,
-        "HcQt66_RE4ZQ4nSA1"    // replace with your EmailJS public key
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY || ''    
       )
       .then(
         (result) => {
