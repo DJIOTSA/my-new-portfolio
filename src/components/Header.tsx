@@ -19,38 +19,15 @@ const Header: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  const downloadPDF = async () => {
-    const { default: html2canvas } = await import('html2canvas');
-    const { default: jsPDF } = await import('jspdf');
-    
-    const element = document.body;
-    const canvas = await html2canvas(element, {
-      scale: 0.8,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff'
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-    
-    pdf.save('Christian_Daryn_Portfolio.pdf');
+  const downloadPDF = () => {
+    const link = document.createElement('a');
+    link.href = 'Djiotsa_Christian_Portfolio.docx'; // file in /public
+    // link.download = 'Christian_Daryn_Portfolio.pdf'; // optional: set download name
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-transparent'
