@@ -19,7 +19,7 @@ const Hero: React.FC = () => {
             <div className="space-y-3 mb-8">
               <div className="flex items-center justify-center lg:justify-start text-gray-600">
                 <MapPin className="w-5 h-5 mr-2 text-blue-600" />
-                <span>Douala, Cameroon</span>
+                <span>Yaounde, Cameroon</span>
               </div>
               <div className="flex items-center justify-center lg:justify-start text-gray-600">
                 <Mail className="w-5 h-5 mr-2 text-blue-600" />
