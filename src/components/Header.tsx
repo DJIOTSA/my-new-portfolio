@@ -4,13 +4,33 @@ import React, { useEffect, useState } from 'react';
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
+
+      // Get all sections
+      const sections = ['about', 'services', 'skills', 'experience', 'education', 'projects', 'contact'];
+      const scrollPosition = window.scrollY + 100; // Offset for header height
+
+      // Find the current section
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const offsetTop = element.offsetTop;
+          const offsetBottom = offsetTop + element.offsetHeight;
+
+          if (scrollPosition >= offsetTop && scrollPosition < offsetBottom) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
     };
 
     window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Call once to set initial active section
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -40,15 +60,25 @@ const Header: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {['About', 'Services', 'Skills', 'Experience', 'Education', 'Projects', 'Contact'].map((item) => (
+            {['About', 'Services', 'Skills', 'Experience', 'Education', 'Projects', 'Contact'].map((item) => {
+              const isActive = activeSection === item.toLowerCase();
+              return (
               <button
                 key={item}
                 onClick={() => scrollToSection(item.toLowerCase())}
-                className="text-gray-700 hover:text-blue-700 font-medium transition-colors"
+                className={`font-medium transition-colors relative ${
+                  isActive 
+                    ? 'text-blue-700' 
+                    : 'text-gray-700 hover:text-blue-700'
+                }`}
               >
                 {item}
+                {isActive && (
+                  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-700 rounded-full"></div>
+                )}
               </button>
-            ))}
+              );
+            })}
             <button
               onClick={downloadPDF}
               className="flex items-center bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors font-medium"
@@ -71,15 +101,22 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-white/95 backdrop-blur-md border-t">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {['About', 'Services', 'Skills', 'Experience', 'Education', 'Projects', 'Contact'].map((item) => (
+              {['About', 'Services', 'Skills', 'Experience', 'Education', 'Projects', 'Contact'].map((item) => {
+                const isActive = activeSection === item.toLowerCase();
+                return (
                 <button
                   key={item}
                   onClick={() => scrollToSection(item.toLowerCase())}
-                  className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-700 font-medium"
+                  className={`block w-full text-left px-3 py-2 font-medium transition-colors ${
+                    isActive 
+                      ? 'text-blue-700 bg-blue-50' 
+                      : 'text-gray-700 hover:text-blue-700 hover:bg-gray-50'
+                  }`}
                 >
                   {item}
                 </button>
-              ))}
+                );
+              })}
               <button
                 onClick={downloadPDF}
                 className="flex items-center w-full text-left px-3 py-2 text-blue-700 hover:text-blue-800 font-medium"
