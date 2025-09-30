@@ -1,5 +1,5 @@
+import { Brain, Cloud, Code, Cog, Database, Smartphone } from 'lucide-react';
 import React from 'react';
-import { Code, Smartphone, Database, Cloud, Brain, Cog } from 'lucide-react';
 
 const Services: React.FC = () => {
   const services = [
@@ -7,13 +7,13 @@ const Services: React.FC = () => {
       icon: <Code className="w-8 h-8" />,
       title: 'Web Development',
       description: 'Full-stack web application development using modern frameworks and technologies. From responsive frontend interfaces to robust backend systems.',
-      features: ['React/Vue.js Frontend', 'Node.js/Python Backend', 'RESTful APIs', 'Database Integration']
+      features: ['React/Next.js Frontend', 'Node.js/Python Backend', 'RESTful APIs', 'Database Integration']
     },
     {
       icon: <Smartphone className="w-8 h-8" />,
       title: 'Mobile Development',
       description: 'Cross-platform mobile applications that deliver exceptional user experiences on both iOS and Android platforms.',
-      features: ['React Native', 'Flutter', 'Native Performance', 'App Store Deployment']
+      features: ['React Native', 'Native Performance', 'App Store Deployment']
     },
     {
       icon: <Database className="w-8 h-8" />,
