@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { mediaFileSchema } from "@/lib/schemas";
 import type { MediaFileEntity } from "@/lib/types";
@@ -28,6 +30,7 @@ const emptyMediaFile: MediaFileFormValues = {
 };
 
 export default function AdminMediaPage() {
+  const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
   const { data } = useAdminQuery<MediaFileEntity[]>(queryKeys.mediaFiles, "/api/admin/media");
   const form = useForm<MediaFileFormValues>({
@@ -42,7 +45,7 @@ export default function AdminMediaPage() {
   }, [data, form]);
 
   async function handleSubmit(values: MediaFileFormValues) {
-    await fetch("/api/admin/media", {
+    await adminFetch("/api/admin/media", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values)
@@ -53,8 +56,8 @@ export default function AdminMediaPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Media</h1>
-        <p className="mt-2 text-gray-600">Manage metadata in `media_files`. Attach storage keys from Supabase Storage or another provider.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Medias" : "Media"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Gerez les metadonnees de `media_files`. Associez les cles de stockage depuis Supabase Storage ou un autre fournisseur." : "Manage metadata in `media_files`. Attach storage keys from Supabase Storage or another provider."}</p>
       </div>
       <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
         <Card>

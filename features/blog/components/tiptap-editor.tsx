@@ -1,6 +1,7 @@
 "use client";
 
 import "katex/dist/katex.min.css";
+import { useEffect } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -29,6 +30,16 @@ export function TiptapEditor({ value, onChange }: TiptapEditorProps) {
       onChange(currentEditor.getHTML());
     }
   });
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    if (editor.getHTML() !== value) {
+      editor.commands.setContent(value || "");
+    }
+  }, [editor, value]);
 
   return (
     <div className="space-y-3">

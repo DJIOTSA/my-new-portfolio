@@ -6,7 +6,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Switch } from "@/components/ui";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { languageSchema } from "@/lib/schemas";
 
@@ -15,6 +17,7 @@ type LanguagesFormValues = LanguageFormValues[];
 const languagesFormSchema = languageSchema.array();
 
 export default function AdminLanguagesPage() {
+  const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
   const { data } = useAdminQuery<LanguagesFormValues>(queryKeys.languages, "/api/admin/languages");
   const form = useForm<{ languages: LanguagesFormValues }>({
@@ -39,7 +42,7 @@ export default function AdminLanguagesPage() {
       isDefault: index === values.languages.findIndex((entry) => entry.isDefault)
     }));
 
-    await fetch("/api/admin/languages", {
+    await adminFetch("/api/admin/languages", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(normalizedLanguages)
@@ -50,8 +53,8 @@ export default function AdminLanguagesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Languages</h1>
-        <p className="mt-2 text-gray-600">Manage enabled locales, fallback order, and the public default language.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Langues" : "Languages"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Gerez les langues actives, l'ordre de secours et la langue publique par defaut." : "Manage enabled locales, fallback order, and the public default language."}</p>
       </div>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {languagesArray.fields.map((field, index) => (
@@ -71,7 +74,7 @@ export default function AdminLanguagesPage() {
                   )
                 }
               >
-                Mark as default
+                {locale === "fr" ? "Definir par defaut" : "Mark as default"}
               </Button>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
@@ -119,7 +122,7 @@ export default function AdminLanguagesPage() {
             </CardContent>
           </Card>
         ))}
-        <Button type="submit">Save languages</Button>
+        <Button type="submit">{locale === "fr" ? "Enregistrer les langues" : "Save languages"}</Button>
       </form>
     </div>
   );

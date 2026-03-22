@@ -19,7 +19,8 @@ export function getDb(): postgres.Sql {
       max: 5,
       idle_timeout: 20,
       prepare: false,
-      connect_timeout: 5
+      connect_timeout: 5,
+      onnotice: () => {}
     });
   }
 

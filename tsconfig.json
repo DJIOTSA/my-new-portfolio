@@ -46,6 +46,7 @@
     "providers/**/*.tsx",
     "repositories/**/*.ts",
     "services/**/*.ts",
+    "types/**/*.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

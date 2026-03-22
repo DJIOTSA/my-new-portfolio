@@ -349,9 +349,11 @@ const blogPosts = [
 const adminUser = {
   id: "admin_user_1",
   username: process.env.ADMIN_USERNAME ?? "admin",
+  email: process.env.ADMIN_EMAIL ?? "admin@example.com",
   passwordHash: hashPassword(process.env.ADMIN_PASSWORD ?? "change-me"),
   role: "super-admin",
-  status: "active"
+  status: "active",
+  emailVerifiedAt: process.env.ADMIN_FORCE_EMAIL_VERIFICATION === "true" ? null : now
 };
 
 async function seed() {
@@ -381,7 +383,7 @@ async function seed() {
     await sql`insert into blog_posts (id, author_id, category_id, status, featured, published_at, scheduled_at, cover_media_id, og_image_media_id, reading_time, difficulty, tags, resources, related_post_ids, social_publishing, translations, created_at, updated_at) values (${post.id}, ${post.authorId}, ${post.categoryId}, ${post.status}, ${post.featured}, ${post.publishedAt}, ${post.scheduledAt}, ${post.coverMediaId}, ${post.ogImageMediaId}, ${post.readingTime}, ${post.difficulty}, ${JSON.stringify(post.tags)}::jsonb, ${JSON.stringify(post.resources)}::jsonb, ${JSON.stringify(post.relatedPostIds)}::jsonb, ${JSON.stringify(post.socialPublishing)}::jsonb, ${JSON.stringify(post.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set author_id = excluded.author_id, category_id = excluded.category_id, status = excluded.status, featured = excluded.featured, published_at = excluded.published_at, scheduled_at = excluded.scheduled_at, cover_media_id = excluded.cover_media_id, og_image_media_id = excluded.og_image_media_id, reading_time = excluded.reading_time, difficulty = excluded.difficulty, tags = excluded.tags, resources = excluded.resources, related_post_ids = excluded.related_post_ids, social_publishing = excluded.social_publishing, translations = excluded.translations, updated_at = excluded.updated_at`;
   }
 
-  await sql`insert into admin_users (id, username, password_hash, role, status, created_at, updated_at) values (${adminUser.id}, ${adminUser.username}, ${adminUser.passwordHash}, ${adminUser.role}, ${adminUser.status}, ${now}, ${now}) on conflict (username) do update set password_hash = excluded.password_hash, role = excluded.role, status = excluded.status, updated_at = excluded.updated_at`;
+  await sql`insert into admin_users (id, username, email, password_hash, role, status, email_verified_at, last_login_at, created_at, updated_at) values (${adminUser.id}, ${adminUser.username}, ${adminUser.email}, ${adminUser.passwordHash}, ${adminUser.role}, ${adminUser.status}, ${adminUser.emailVerifiedAt}, ${null}, ${now}, ${now}) on conflict (username) do update set email = excluded.email, password_hash = excluded.password_hash, role = excluded.role, status = excluded.status, email_verified_at = coalesce(admin_users.email_verified_at, excluded.email_verified_at), updated_at = excluded.updated_at`;
 
   logStep("Seed completed.");
 }

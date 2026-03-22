@@ -8,6 +8,8 @@ import { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@/components/ui";
 import { TiptapEditor } from "@/features/blog/components/tiptap-editor";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { blogCategorySchema, blogPostSchema, blogTagSchema } from "@/lib/schemas";
 import type { BlogAuthorEntity, BlogCategoryEntity, BlogPostEntity, BlogTagEntity } from "@/lib/types";
@@ -22,6 +24,36 @@ interface AdminBlogData {
 type BlogPostFormValues = z.infer<typeof blogPostSchema>;
 type BlogCategoryFormValues = z.infer<typeof blogCategorySchema>;
 type BlogTagFormValues = z.infer<typeof blogTagSchema>;
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === "string" ? entry : String(entry ?? "")))
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function normalizeResourcesArray(value: unknown): BlogPostFormValues["resources"] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") {
+      return [];
+    }
+
+    const resource = entry as { label?: unknown; url?: unknown; type?: unknown };
+    return [{
+      label: typeof resource.label === "string" ? resource.label : "",
+      url: typeof resource.url === "string" ? resource.url : "",
+      type: typeof resource.type === "string" ? resource.type : undefined
+    }];
+  });
+}
 
 function mapPostToFormValues(post: BlogPostEntity): BlogPostFormValues {
   const en = post.translations.en;
@@ -39,9 +71,9 @@ function mapPostToFormValues(post: BlogPostEntity): BlogPostFormValues {
     ogImageMediaId: post.ogImageMediaId,
     readingTime: post.readingTime,
     difficulty: post.difficulty,
-    tags: post.tags,
-    resources: post.resources,
-    relatedPostIds: post.relatedPostIds,
+    tags: normalizeStringArray(post.tags),
+    resources: normalizeResourcesArray(post.resources),
+    relatedPostIds: normalizeStringArray(post.relatedPostIds),
     socialPublishing: post.socialPublishing,
     translations: {
       en: {
@@ -134,8 +166,49 @@ function createEmptyPost(authors: BlogAuthorEntity[], categories: BlogCategoryEn
   };
 }
 
+function normalizeNullableString(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeBlogPost(values: BlogPostFormValues): BlogPostFormValues {
+  const normalizedTags = normalizeStringArray(values.tags);
+  const normalizedRelatedPostIds = normalizeStringArray(values.relatedPostIds);
+  const normalizedResources = normalizeResourcesArray(values.resources);
+
+  return {
+    ...values,
+    publishedAt: normalizeNullableString(values.publishedAt),
+    scheduledAt: normalizeNullableString(values.scheduledAt),
+    coverMediaId: normalizeNullableString(values.coverMediaId),
+    ogImageMediaId: normalizeNullableString(values.ogImageMediaId),
+    tags: normalizedTags,
+    relatedPostIds: normalizedRelatedPostIds,
+    resources: normalizedResources
+      .map((resource) => ({
+        ...resource,
+        label: resource.label.trim(),
+        url: resource.url.trim(),
+        type: resource.type?.trim() || undefined
+      }))
+      .filter((resource) => resource.label && resource.url)
+  };
+}
+
+function normalizeCategory(values: BlogCategoryFormValues): BlogCategoryFormValues {
+  return {
+    ...values,
+    parentId: normalizeNullableString(values.parentId)
+  };
+}
+
 export default function AdminBlogPage() {
   const queryClient = useQueryClient();
+  const { locale } = useAdminLocale();
   const { data } = useAdminQuery<AdminBlogData>(queryKeys.blogPosts, "/api/admin/blog/posts");
   const [selectedPostId, setSelectedPostId] = useState<string>("");
   const selectedPost = useMemo(
@@ -143,7 +216,8 @@ export default function AdminBlogPage() {
     [data?.posts, selectedPostId]
   );
   const postForm = useForm<BlogPostFormValues>({
-    resolver: zodResolver(blogPostSchema)
+    resolver: zodResolver(blogPostSchema),
+    defaultValues: createEmptyPost([], [])
   });
   const categoriesForm = useForm<{ categories: BlogCategoryFormValues[] }>({
     resolver: zodResolver(z.object({ categories: blogCategorySchema.array() })),
@@ -157,6 +231,9 @@ export default function AdminBlogPage() {
   const resourcesArray = useFieldArray({ control: postForm.control, name: "resources" });
   const categoriesArray = useFieldArray({ control: categoriesForm.control, name: "categories" });
   const tagsArray = useFieldArray({ control: tagsForm.control, name: "tags" });
+
+  const watchedTags = normalizeStringArray(postForm.watch("tags"));
+  const watchedRelatedPostIds = normalizeStringArray(postForm.watch("relatedPostIds"));
 
   useEffect(() => {
     if (data?.posts[0] && !selectedPostId) {
@@ -183,10 +260,10 @@ export default function AdminBlogPage() {
   }, [tagsForm, data?.tags]);
 
   async function savePost(values: BlogPostFormValues) {
-    await fetch("/api/admin/blog/posts", {
+    await adminFetch("/api/admin/blog/posts", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values)
+      body: JSON.stringify(normalizeBlogPost(values))
     });
     await queryClient.invalidateQueries({ queryKey: queryKeys.blogPosts });
   }
@@ -194,10 +271,10 @@ export default function AdminBlogPage() {
   async function saveCategories(values: { categories: BlogCategoryFormValues[] }) {
     await Promise.all(
       values.categories.map((category) =>
-        fetch("/api/admin/blog/categories", {
+        adminFetch("/api/admin/blog/categories", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(category)
+          body: JSON.stringify(normalizeCategory(category))
         })
       )
     );
@@ -208,7 +285,7 @@ export default function AdminBlogPage() {
   async function saveTags(values: { tags: BlogTagFormValues[] }) {
     await Promise.all(
       values.tags.map((tag) =>
-        fetch("/api/admin/blog/tags", {
+        adminFetch("/api/admin/blog/tags", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(tag)
@@ -222,14 +299,14 @@ export default function AdminBlogPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Blog Management</h1>
-        <p className="mt-2 text-gray-600">Manage posts, categories, tags, translations, and article-specific SEO from one CMS workspace.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Gestion du blog" : "Blog Management"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Gerez les articles, categories, tags, traductions et elements SEO depuis un seul espace CMS." : "Manage posts, categories, tags, translations, and article-specific SEO from one CMS workspace."}</p>
       </div>
       <Tabs defaultValue="posts">
         <TabsList>
-          <TabsTrigger value="posts">Posts</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="tags">Tags</TabsTrigger>
+          <TabsTrigger value="posts">{locale === "fr" ? "Articles" : "Posts"}</TabsTrigger>
+          <TabsTrigger value="categories">{locale === "fr" ? "Categories" : "Categories"}</TabsTrigger>
+          <TabsTrigger value="tags">{locale === "fr" ? "Tags" : "Tags"}</TabsTrigger>
         </TabsList>
         <TabsContent value="posts" className="space-y-6">
           <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
@@ -245,7 +322,7 @@ export default function AdminBlogPage() {
                     postForm.reset(nextPost);
                   }}
                 >
-                  New post
+                  {locale === "fr" ? "Nouvel article" : "New post"}
                 </Button>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -265,7 +342,7 @@ export default function AdminBlogPage() {
             <form onSubmit={postForm.handleSubmit(savePost)} className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Post Editor</CardTitle>
+                  <CardTitle>{locale === "fr" ? "Editeur d'article" : "Post Editor"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-3">
@@ -338,7 +415,7 @@ export default function AdminBlogPage() {
                     <div className="space-y-2">
                       <Label>Tag IDs</Label>
                       <Input
-                        value={postForm.watch("tags").join(", ")}
+                        value={watchedTags.join(", ")}
                         onChange={(event) =>
                           postForm.setValue(
                             "tags",
@@ -453,7 +530,7 @@ export default function AdminBlogPage() {
                   <div className="space-y-2">
                     <Label>Related Post IDs</Label>
                     <Textarea
-                      value={postForm.watch("relatedPostIds").join("\n")}
+                      value={watchedRelatedPostIds.join("\n")}
                       onChange={(event) =>
                         postForm.setValue(
                           "relatedPostIds",
@@ -462,7 +539,7 @@ export default function AdminBlogPage() {
                       }
                     />
                   </div>
-                  <Button type="submit">Save post</Button>
+                  <Button type="submit">{locale === "fr" ? "Enregistrer l'article" : "Save post"}</Button>
                 </CardContent>
               </Card>
             </form>

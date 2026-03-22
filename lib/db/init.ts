@@ -1,3 +1,4 @@
+import { randomBytes, scryptSync } from "node:crypto";
 import { getDb } from "@/lib/db/postgres";
 import {
   seedAbout,
@@ -19,6 +20,12 @@ import {
 
 let initialized = false;
 
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
 export async function ensureDatabase(): Promise<void> {
   if (initialized) {
     return;
@@ -36,6 +43,23 @@ export async function ensureDatabase(): Promise<void> {
   await sql`create table if not exists media_files (id text primary key, storage_key text not null, file_name text not null, mime_type text not null, size integer not null, width integer, height integer, alt_translations jsonb not null, created_at timestamptz not null, updated_at timestamptz not null)`;
   await sql`create table if not exists contact_entries (id text primary key, type text not null, name text not null, email text not null, company text, subject text not null, message text not null, status text not null, created_at timestamptz not null, updated_at timestamptz not null)`;
   await sql`create table if not exists social_publications (id text primary key, blog_post_id text not null, language_code text not null, platform text not null, status text not null, generated_text text not null, final_text text not null, external_post_id text, external_url text, published_at timestamptz, retry_count integer not null, error_message text, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_users (id text primary key, username text not null unique, email text not null unique, password_hash text not null, role text not null, status text not null, email_verified_at timestamptz, last_login_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_refresh_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, revoked_at timestamptz, replaced_by_token_id text, user_agent text, ip_address text, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_email_verification_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, consumed_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_password_reset_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, consumed_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`alter table admin_users add column if not exists email text`;
+  await sql`alter table admin_users add column if not exists email_verified_at timestamptz`;
+  await sql`alter table admin_users add column if not exists last_login_at timestamptz`;
+  await sql`do $$ begin
+    if not exists (
+      select 1 from pg_constraint where conname = 'admin_users_email_key'
+    ) then
+      alter table admin_users add constraint admin_users_email_key unique (email);
+    end if;
+  end $$`;
+
+  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@example.com";
+  await sql`update admin_users set email = coalesce(email, ${adminEmail}) where email is null`;
 
   const [{ count: languageCount }] = await sql<{ count: string }[]>`select count(*)::text as count from languages`;
   if (Number(languageCount) === 0) {
@@ -89,6 +113,27 @@ export async function ensureDatabase(): Promise<void> {
     for (const post of seedBlogPosts) {
       await sql`insert into blog_posts (id, author_id, category_id, status, featured, published_at, scheduled_at, cover_media_id, og_image_media_id, reading_time, difficulty, tags, resources, related_post_ids, social_publishing, translations, created_at, updated_at) values (${post.id}, ${post.authorId}, ${post.categoryId}, ${post.status}, ${post.featured}, ${post.publishedAt}, ${post.scheduledAt}, ${post.coverMediaId}, ${post.ogImageMediaId}, ${post.readingTime}, ${post.difficulty}, ${JSON.stringify(post.tags)}::jsonb, ${JSON.stringify(post.resources)}::jsonb, ${JSON.stringify(post.relatedPostIds)}::jsonb, ${JSON.stringify(post.socialPublishing)}::jsonb, ${JSON.stringify(post.translations)}::jsonb, ${post.createdAt}, ${post.updatedAt})`;
     }
+  }
+
+  const [{ count: adminUserCount }] = await sql<{ count: string }[]>`select count(*)::text as count from admin_users`;
+  if (Number(adminUserCount) === 0) {
+    const now = new Date().toISOString();
+    await sql`
+      insert into admin_users (
+        id, username, email, password_hash, role, status, email_verified_at, last_login_at, created_at, updated_at
+      ) values (
+        ${"admin_user_1"},
+        ${process.env.ADMIN_USERNAME ?? "admin"},
+        ${adminEmail},
+        ${hashPassword(process.env.ADMIN_PASSWORD ?? "change-me")},
+        ${"super-admin"},
+        ${"active"},
+        ${process.env.ADMIN_FORCE_EMAIL_VERIFICATION === "true" ? null : now},
+        ${null},
+        ${now},
+        ${now}
+      )
+    `;
   }
 
   initialized = true;

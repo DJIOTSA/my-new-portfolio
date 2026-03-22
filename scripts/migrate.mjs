@@ -40,12 +40,20 @@ async function migrate() {
   await sql`create table if not exists media_files (id text primary key, storage_key text not null, file_name text not null, mime_type text not null, size integer not null, width integer, height integer, alt_translations jsonb not null, created_at timestamptz not null, updated_at timestamptz not null)`;
   await sql`create table if not exists contact_entries (id text primary key, type text not null, name text not null, email text not null, company text, subject text not null, message text not null, status text not null, created_at timestamptz not null, updated_at timestamptz not null)`;
   await sql`create table if not exists social_publications (id text primary key, blog_post_id text not null, language_code text not null, platform text not null, status text not null, generated_text text not null, final_text text not null, external_post_id text, external_url text, published_at timestamptz, retry_count integer not null, error_message text, created_at timestamptz not null, updated_at timestamptz not null)`;
-  await sql`create table if not exists admin_users (id text primary key, username text not null unique, password_hash text not null, role text not null, status text not null, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_users (id text primary key, username text not null unique, email text not null unique, password_hash text not null, role text not null, status text not null, email_verified_at timestamptz, last_login_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_refresh_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, revoked_at timestamptz, replaced_by_token_id text, user_agent text, ip_address text, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_email_verification_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, consumed_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`create table if not exists admin_password_reset_tokens (id text primary key, user_id text not null, token_hash text not null unique, expires_at timestamptz not null, consumed_at timestamptz, created_at timestamptz not null, updated_at timestamptz not null)`;
+  await sql`alter table admin_users add column if not exists email text`;
+  await sql`alter table admin_users add column if not exists email_verified_at timestamptz`;
+  await sql`alter table admin_users add column if not exists last_login_at timestamptz`;
+  await sql`update admin_users set email = coalesce(email, ${process.env.ADMIN_EMAIL ?? "admin@example.com"}) where email is null`;
+  await sql`create unique index if not exists admin_users_email_idx on admin_users (email)`;
 
   await sql`grant usage on schema public to anon, authenticated`;
   await sql`grant select on public.languages, public.site_settings, public.portfolio_documents, public.blog_categories, public.blog_tags, public.blog_authors, public.blog_posts, public.media_files to anon, authenticated`;
   await sql`grant insert on public.contact_entries to anon, authenticated`;
-  await sql`grant select, insert, update, delete on public.contact_entries, public.social_publications, public.admin_users to authenticated`;
+  await sql`grant select, insert, update, delete on public.contact_entries, public.social_publications, public.admin_users, public.admin_refresh_tokens, public.admin_email_verification_tokens, public.admin_password_reset_tokens to authenticated`;
   await sql`grant select, insert, update, delete on public.languages, public.site_settings, public.portfolio_documents, public.blog_categories, public.blog_tags, public.blog_authors, public.blog_posts, public.media_files to authenticated`;
 
   for (const tableName of [
@@ -59,7 +67,10 @@ async function migrate() {
     "media_files",
     "contact_entries",
     "social_publications",
-    "admin_users"
+    "admin_users",
+    "admin_refresh_tokens",
+    "admin_email_verification_tokens",
+    "admin_password_reset_tokens"
   ]) {
     await enableRls(tableName);
   }
@@ -83,6 +94,9 @@ async function migrate() {
   await ensurePolicy("social_publications", "authenticated_manage_social_publications_update", "update", "true", "true", ["authenticated"]);
   await ensurePolicy("social_publications", "authenticated_manage_social_publications_delete", "delete", "true", null, ["authenticated"]);
   await ensurePolicy("admin_users", "authenticated_manage_admin_users", "all", "true", "true", ["authenticated"]);
+  await ensurePolicy("admin_refresh_tokens", "authenticated_manage_admin_refresh_tokens", "all", "true", "true", ["authenticated"]);
+  await ensurePolicy("admin_email_verification_tokens", "authenticated_manage_admin_email_verification_tokens", "all", "true", "true", ["authenticated"]);
+  await ensurePolicy("admin_password_reset_tokens", "authenticated_manage_admin_password_reset_tokens", "all", "true", "true", ["authenticated"]);
 
   await ensurePolicy("languages", "authenticated_manage_languages", "all", "true", "true", ["authenticated"]);
   await ensurePolicy("site_settings", "authenticated_manage_site_settings", "all", "true", "true", ["authenticated"]);

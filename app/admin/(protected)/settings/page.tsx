@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@/components/ui";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { siteSettingsSchema } from "@/lib/schemas";
 import type { AdminUserEntity } from "@/lib/types";
@@ -14,6 +16,7 @@ import type { AdminUserEntity } from "@/lib/types";
 type SiteSettingsFormValues = z.infer<typeof siteSettingsSchema>;
 
 export default function AdminSettingsPage() {
+  const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
   const { data: settings } = useAdminQuery<SiteSettingsFormValues>(queryKeys.siteSettings, "/api/admin/settings");
   const { data: users } = useAdminQuery<AdminUserEntity[]>(queryKeys.adminUsers, "/api/admin/users");
@@ -28,7 +31,7 @@ export default function AdminSettingsPage() {
   }, [settings, form]);
 
   async function handleSubmit(values: SiteSettingsFormValues) {
-    await fetch("/api/admin/settings", {
+    await adminFetch("/api/admin/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values)
@@ -39,8 +42,8 @@ export default function AdminSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-2 text-gray-600">Manage site-wide identity, SEO defaults, contact routes, and database-backed admin users.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Parametres" : "Settings"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Gerez l'identite du site, les parametres SEO, les routes de contact et les utilisateurs admin." : "Manage site-wide identity, SEO defaults, contact routes, and database-backed admin users."}</p>
       </div>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <Card>

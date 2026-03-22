@@ -28,6 +28,102 @@
       "namedRegex": "^/(?<nxtPlang>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/[lang]/admin",
+      "regex": "^/([^/]+?)/admin(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/blog",
+      "regex": "^/([^/]+?)/admin/blog(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/blog(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/contact",
+      "regex": "^/([^/]+?)/admin/contact(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/contact(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/forgot-password",
+      "regex": "^/([^/]+?)/admin/forgot\\-password(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/forgot\\-password(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/languages",
+      "regex": "^/([^/]+?)/admin/languages(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/languages(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/login",
+      "regex": "^/([^/]+?)/admin/login(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/login(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/media",
+      "regex": "^/([^/]+?)/admin/media(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/media(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/portfolio",
+      "regex": "^/([^/]+?)/admin/portfolio(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/portfolio(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/reset-password",
+      "regex": "^/([^/]+?)/admin/reset\\-password(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/reset\\-password(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/settings",
+      "regex": "^/([^/]+?)/admin/settings(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/social",
+      "regex": "^/([^/]+?)/admin/social(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/social(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/verify-email",
+      "regex": "^/([^/]+?)/admin/verify\\-email(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/verify\\-email(?:/)?$"
+    },
+    {
       "page": "/[lang]/blog",
       "regex": "^/([^/]+?)/blog(?:/)?$",
       "routeKeys": {
@@ -77,6 +173,12 @@
       "namedRegex": "^/admin/contact(?:/)?$"
     },
     {
+      "page": "/admin/forgot-password",
+      "regex": "^/admin/forgot\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/forgot\\-password(?:/)?$"
+    },
+    {
       "page": "/admin/languages",
       "regex": "^/admin/languages(?:/)?$",
       "routeKeys": {},
@@ -95,6 +197,18 @@
       "namedRegex": "^/admin/media(?:/)?$"
     },
     {
+      "page": "/admin/portfolio",
+      "regex": "^/admin/portfolio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/portfolio(?:/)?$"
+    },
+    {
+      "page": "/admin/reset-password",
+      "regex": "^/admin/reset\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/reset\\-password(?:/)?$"
+    },
+    {
       "page": "/admin/settings",
       "regex": "^/admin/settings(?:/)?$",
       "routeKeys": {},
@@ -105,6 +219,12 @@
       "regex": "^/admin/social(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/social(?:/)?$"
+    },
+    {
+      "page": "/admin/verify-email",
+      "regex": "^/admin/verify\\-email(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/verify\\-email(?:/)?$"
     },
     {
       "page": "/robots.txt",

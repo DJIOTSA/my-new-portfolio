@@ -2,18 +2,21 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Card, CardContent, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import type { ContactEntryEntity } from "@/lib/types";
 
 const leadStatuses = ["new", "reviewing", "replied", "closed"] as const;
 
 export default function AdminContactPage() {
+  const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
   const { data } = useAdminQuery<ContactEntryEntity[]>(queryKeys.contactEntries, "/api/admin/contact");
 
   async function updateStatus(id: string, status: string) {
-    await fetch("/api/admin/contact", {
+    await adminFetch("/api/admin/contact", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status })
@@ -24,8 +27,8 @@ export default function AdminContactPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Leads</h1>
-        <p className="mt-2 text-gray-600">Track inbound contact, project inquiry, and consultation requests from the portfolio and blog.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Prospects" : "Leads"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Suivez les demandes de contact, de projet et de consultation depuis le portfolio et le blog." : "Track inbound contact, project inquiry, and consultation requests from the portfolio and blog."}</p>
       </div>
       <Card>
         <CardHeader>

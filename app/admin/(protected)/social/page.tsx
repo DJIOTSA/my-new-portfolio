@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "@/components/ui";
+import { useAdminLocale } from "@/components/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
+import { adminFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { socialPublicationSchema } from "@/lib/schemas";
 import type { BlogPostEntity, SocialPublicationEntity } from "@/lib/types";
@@ -22,6 +24,7 @@ function mapPublicationToFormValues(publication: SocialPublicationEntity): Socia
 }
 
 export default function AdminSocialPage() {
+  const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
   const { data } = useAdminQuery<SocialPublicationEntity[]>(queryKeys.socialPublications, "/api/admin/social");
   const { data: blogData } = useAdminQuery<AdminBlogPostsData>(queryKeys.blogPosts, "/api/admin/blog/posts");
@@ -51,7 +54,7 @@ export default function AdminSocialPage() {
   }, [form, selectedPublication]);
 
   async function generate(platform: "linkedin" | "x") {
-    await fetch("/api/social/generate", {
+    await adminFetch("/api/social/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ postId, platform, languageCode })
@@ -60,7 +63,7 @@ export default function AdminSocialPage() {
   }
 
   async function handleSubmit(values: SocialPublicationFormValues) {
-    await fetch("/api/admin/social", {
+    await adminFetch("/api/admin/social", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values)
@@ -71,8 +74,8 @@ export default function AdminSocialPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Social Publishing</h1>
-        <p className="mt-2 text-gray-600">Generate, review, edit, and track LinkedIn and X copy for published multilingual articles.</p>
+        <h1 className="text-3xl font-bold text-gray-900">{locale === "fr" ? "Publication sociale" : "Social Publishing"}</h1>
+        <p className="mt-2 text-gray-600">{locale === "fr" ? "Generez, revisez, modifiez et suivez les contenus LinkedIn et X pour les articles multilingues publies." : "Generate, review, edit, and track LinkedIn and X copy for published multilingual articles."}</p>
       </div>
       <Card>
         <CardHeader>
