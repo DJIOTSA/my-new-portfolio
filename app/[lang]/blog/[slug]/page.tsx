@@ -60,7 +60,7 @@ export default async function BlogDetailPage({
         </div>
       </div>
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+        <div className="blog-content max-w-none" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
         <div className="mt-12 rounded-2xl bg-gray-50 p-8">
           <h2 className="text-2xl font-bold text-gray-900">{post.courseCtaTitle}</h2>
           <p className="mt-3 text-gray-600">{post.courseCtaDescription}</p>

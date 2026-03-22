@@ -108,6 +108,30 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/blog": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/blog",
+      "dataRoute": "/blog.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/admin/forgot-password": {
       "experimentalBypassFor": [
         {
@@ -132,7 +156,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/admin/reset-password": {
+    "/admin/verify-email": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -145,8 +169,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/admin/reset-password",
-      "dataRoute": "/admin/reset-password.rsc",
+      "srcRoute": "/admin/verify-email",
+      "dataRoute": "/admin/verify-email.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -180,7 +204,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/admin/verify-email": {
+    "/admin/reset-password": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -193,8 +217,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/admin/verify-email",
-      "dataRoute": "/admin/verify-email.rsc",
+      "srcRoute": "/admin/reset-password",
+      "dataRoute": "/admin/reset-password.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",

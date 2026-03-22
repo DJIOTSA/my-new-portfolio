@@ -20,6 +20,22 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/admin/blog/[postId]",
+      "regex": "^/admin/blog/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPpostId": "nxtPpostId"
+      },
+      "namedRegex": "^/admin/blog/(?<nxtPpostId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/blog/[slug]",
+      "regex": "^/blog/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPslug": "nxtPslug"
+      },
+      "namedRegex": "^/blog/(?<nxtPslug>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/[lang]",
       "regex": "^/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -42,6 +58,23 @@
         "nxtPlang": "nxtPlang"
       },
       "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/blog(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/blog/new",
+      "regex": "^/([^/]+?)/admin/blog/new(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/blog/new(?:/)?$"
+    },
+    {
+      "page": "/[lang]/admin/blog/[postId]",
+      "regex": "^/([^/]+?)/admin/blog/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPlang": "nxtPlang",
+        "nxtPpostId": "nxtPpostId"
+      },
+      "namedRegex": "^/(?<nxtPlang>[^/]+?)/admin/blog/(?<nxtPpostId>[^/]+?)(?:/)?$"
     },
     {
       "page": "/[lang]/admin/contact",
@@ -167,6 +200,12 @@
       "namedRegex": "^/admin/blog(?:/)?$"
     },
     {
+      "page": "/admin/blog/new",
+      "regex": "^/admin/blog/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/blog/new(?:/)?$"
+    },
+    {
       "page": "/admin/contact",
       "regex": "^/admin/contact(?:/)?$",
       "routeKeys": {},
@@ -225,6 +264,12 @@
       "regex": "^/admin/verify\\-email(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/verify\\-email(?:/)?$"
+    },
+    {
+      "page": "/blog",
+      "regex": "^/blog(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/blog(?:/)?$"
     },
     {
       "page": "/robots.txt",

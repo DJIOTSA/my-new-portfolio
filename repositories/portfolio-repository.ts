@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db/postgres";
+import { ensureDatabase } from "@/lib/db/init";
 import {
   seedAbout,
   seedCertifications,
@@ -52,6 +53,7 @@ function normalizeArray<T>(
 }
 
 async function getPortfolioDocument<T>(sectionKey: string): Promise<T> {
+  await ensureDatabase();
   const sql = getDb();
   const [document] = await sql<PortfolioDocumentRow<T>[]>`
     select data
@@ -114,6 +116,7 @@ export async function savePortfolioDocuments(payload: {
   projects: ProjectEntity[];
   contact: ContactSectionEntity;
 }): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   const documents = [
     { key: "hero", value: payload.hero },

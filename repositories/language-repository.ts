@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db/postgres";
+import { ensureDatabase } from "@/lib/db/init";
 import type { LanguageCode, LanguageEntity } from "@/lib/types";
 
 function mapLanguage(row: {
@@ -26,6 +27,7 @@ function mapLanguage(row: {
 }
 
 export async function getLanguages(): Promise<LanguageEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -72,6 +74,7 @@ export async function resolveRequestedLanguage(requestedLanguage: string | undef
 }
 
 export async function upsertLanguages(languages: LanguageEntity[]): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`delete from languages`;
   for (const language of languages) {

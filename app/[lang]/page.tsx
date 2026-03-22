@@ -328,6 +328,12 @@ export default async function PortfolioPage({
                   <span>{post.readingTime} min read</span>
                   <span>{post.author.name}</span>
                 </div>
+                <div className="mt-6 flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-700 group-hover:text-blue-800">
+                    Read article
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-blue-700 group-hover:text-blue-800" />
+                </div>
               </Link>
             ))}
           </div>
@@ -388,6 +394,11 @@ export default async function PortfolioPage({
       <footer className="bg-gray-800 text-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
+            <div className="mb-4">
+              <Link href={`/${lang}/blog`} className="text-sm font-medium text-blue-300 hover:text-blue-200 transition-colors">
+                Visit the blog
+              </Link>
+            </div>
             <p className="flex items-center justify-center text-gray-300 mb-4">
               Made with <Heart className="w-4 h-4 text-red-500 mx-1" /> by Djiotsa Christian
             </p>

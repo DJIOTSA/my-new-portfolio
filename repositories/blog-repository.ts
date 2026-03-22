@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db/postgres";
+import { ensureDatabase } from "@/lib/db/init";
 import type {
   BlogAuthorEntity,
   BlogCategoryEntity,
@@ -11,6 +12,7 @@ import type {
 } from "@/lib/types";
 
 export async function getSiteSettings(): Promise<SiteSettingsEntity> {
+  await ensureDatabase();
   const sql = getDb();
   const [row] = await sql<{
     id: string;
@@ -78,6 +80,7 @@ export async function saveSiteSettings(settings: SiteSettingsEntity): Promise<vo
 }
 
 export async function getBlogCategories(): Promise<BlogCategoryEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -99,6 +102,7 @@ export async function getBlogCategories(): Promise<BlogCategoryEntity[]> {
 }
 
 export async function getBlogTags(): Promise<BlogTagEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -116,6 +120,7 @@ export async function getBlogTags(): Promise<BlogTagEntity[]> {
 }
 
 export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -143,6 +148,7 @@ export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
 }
 
 export async function getBlogPosts(): Promise<BlogPostEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -188,6 +194,7 @@ export async function getBlogPosts(): Promise<BlogPostEntity[]> {
 }
 
 export async function saveBlogPost(post: BlogPostEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into blog_posts (
@@ -221,6 +228,7 @@ export async function saveBlogPost(post: BlogPostEntity): Promise<void> {
 }
 
 export async function saveBlogCategory(category: BlogCategoryEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into blog_categories (id, parent_id, order_index, translations, created_at, updated_at)
@@ -234,6 +242,7 @@ export async function saveBlogCategory(category: BlogCategoryEntity): Promise<vo
 }
 
 export async function saveBlogTag(tag: BlogTagEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into blog_tags (id, translations, created_at, updated_at)
@@ -245,6 +254,7 @@ export async function saveBlogTag(tag: BlogTagEntity): Promise<void> {
 }
 
 export async function createContactEntry(entry: ContactEntryEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into contact_entries (id, type, name, email, company, subject, message, status, created_at, updated_at)
@@ -253,6 +263,7 @@ export async function createContactEntry(entry: ContactEntryEntity): Promise<voi
 }
 
 export async function getContactEntries(): Promise<ContactEntryEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -281,6 +292,7 @@ export async function getContactEntries(): Promise<ContactEntryEntity[]> {
 }
 
 export async function updateContactEntryStatus(id: string, status: string): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     update contact_entries
@@ -291,6 +303,7 @@ export async function updateContactEntryStatus(id: string, status: string): Prom
 }
 
 export async function getMediaFiles(): Promise<MediaFileEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -320,6 +333,7 @@ export async function getMediaFiles(): Promise<MediaFileEntity[]> {
 }
 
 export async function saveMediaFile(file: MediaFileEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into media_files (
@@ -349,6 +363,7 @@ export async function saveMediaFile(file: MediaFileEntity): Promise<void> {
 }
 
 export async function getSocialPublications(): Promise<SocialPublicationEntity[]> {
+  await ensureDatabase();
   const sql = getDb();
   const rows = await sql<{
     id: string;
@@ -386,6 +401,7 @@ export async function getSocialPublications(): Promise<SocialPublicationEntity[]
 }
 
 export async function saveSocialPublication(publication: SocialPublicationEntity): Promise<void> {
+  await ensureDatabase();
   const sql = getDb();
   await sql`
     insert into social_publications (
