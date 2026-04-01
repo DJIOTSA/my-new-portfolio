@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BlogLocaleSwitcher } from "@/components/molecules/blog-locale-switcher";
 import { buildPageMetadata } from "@/lib/seo";
 import { getBlogListing } from "@/services/blog-service";
 
@@ -36,9 +37,12 @@ export default async function BlogListingPage({
     <main className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href={`/${lang}`} className="text-blue-700 font-medium">
-            Back to portfolio
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <Link href={`/${lang}`} className="text-blue-700 font-medium">
+              Back to portfolio
+            </Link>
+            <BlogLocaleSwitcher currentLocale={lang as "en" | "fr"} />
+          </div>
           <h1 className="mt-6 text-4xl lg:text-5xl font-bold text-gray-900">Blog</h1>
           <p className="mt-4 text-xl text-gray-600 max-w-3xl">
             Multilingual technical writing on data science, software engineering, AI integration, and product systems.

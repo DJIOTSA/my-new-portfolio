@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/postgres";
-import { ensureDatabase } from "@/lib/db/init";
+import { ensureDatabase } from "@/db/init";
+import { insertRows, selectRows, updateRows } from "@/db/supabase-rest";
 import type {
   BlogAuthorEntity,
   BlogCategoryEntity,
@@ -13,8 +13,7 @@ import type {
 
 export async function getSiteSettings(): Promise<SiteSettingsEntity> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     logo_media_id: string | null;
     default_og_image_id: string | null;
@@ -26,7 +25,7 @@ export async function getSiteSettings(): Promise<SiteSettingsEntity> {
     translations: SiteSettingsEntity["translations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from site_settings limit 1`;
+  }>("site_settings", { limit: 1 });
 
   if (!row) {
     throw new Error("Site settings not found.");
@@ -48,48 +47,31 @@ export async function getSiteSettings(): Promise<SiteSettingsEntity> {
 }
 
 export async function saveSiteSettings(settings: SiteSettingsEntity): Promise<void> {
-  const sql = getDb();
-  await sql`
-    insert into site_settings (
-      id, logo_media_id, default_og_image_id, contact_email, linkedin_url, x_url,
-      github_url, course_platform_url, translations, created_at, updated_at
-    ) values (
-      ${settings.id},
-      ${settings.logoMediaId},
-      ${settings.defaultOgImageId},
-      ${settings.contactEmail},
-      ${settings.linkedinUrl},
-      ${settings.xUrl},
-      ${settings.githubUrl},
-      ${settings.coursePlatformUrl},
-      ${JSON.stringify(settings.translations)}::jsonb,
-      ${settings.createdAt},
-      ${settings.updatedAt}
-    )
-    on conflict (id) do update
-    set logo_media_id = excluded.logo_media_id,
-        default_og_image_id = excluded.default_og_image_id,
-        contact_email = excluded.contact_email,
-        linkedin_url = excluded.linkedin_url,
-        x_url = excluded.x_url,
-        github_url = excluded.github_url,
-        course_platform_url = excluded.course_platform_url,
-        translations = excluded.translations,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("site_settings", {
+    id: settings.id,
+    logo_media_id: settings.logoMediaId,
+    default_og_image_id: settings.defaultOgImageId,
+    contact_email: settings.contactEmail,
+    linkedin_url: settings.linkedinUrl,
+    x_url: settings.xUrl,
+    github_url: settings.githubUrl,
+    course_platform_url: settings.coursePlatformUrl,
+    translations: settings.translations,
+    created_at: settings.createdAt,
+    updated_at: settings.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }
 
 export async function getBlogCategories(): Promise<BlogCategoryEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     parent_id: string | null;
     order_index: number;
     translations: BlogCategoryEntity["translations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from blog_categories order by order_index asc`;
+  }>("blog_categories", { orderBy: { column: "order_index", ascending: true } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -103,13 +85,12 @@ export async function getBlogCategories(): Promise<BlogCategoryEntity[]> {
 
 export async function getBlogTags(): Promise<BlogTagEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     translations: BlogTagEntity["translations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from blog_tags order by created_at asc`;
+  }>("blog_tags", { orderBy: { column: "created_at", ascending: true } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -121,8 +102,7 @@ export async function getBlogTags(): Promise<BlogTagEntity[]> {
 
 export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     avatar_media_id: string | null;
     email: string;
@@ -132,7 +112,7 @@ export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
     translations: BlogAuthorEntity["translations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from blog_authors order by created_at asc`;
+  }>("blog_authors", { orderBy: { column: "created_at", ascending: true } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -149,8 +129,7 @@ export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
 
 export async function getBlogPosts(): Promise<BlogPostEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     author_id: string;
     category_id: string;
@@ -169,7 +148,7 @@ export async function getBlogPosts(): Promise<BlogPostEntity[]> {
     translations: BlogPostEntity["translations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from blog_posts order by coalesce(published_at, created_at) desc`;
+  }>("blog_posts", { orderBy: { column: "created_at", ascending: false } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -195,77 +174,69 @@ export async function getBlogPosts(): Promise<BlogPostEntity[]> {
 
 export async function saveBlogPost(post: BlogPostEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into blog_posts (
-      id, author_id, category_id, status, featured, published_at, scheduled_at, cover_media_id,
-      og_image_media_id, reading_time, difficulty, tags, resources, related_post_ids, social_publishing,
-      translations, created_at, updated_at
-    ) values (
-      ${post.id}, ${post.authorId}, ${post.categoryId}, ${post.status}, ${post.featured}, ${post.publishedAt},
-      ${post.scheduledAt}, ${post.coverMediaId}, ${post.ogImageMediaId}, ${post.readingTime}, ${post.difficulty},
-      ${JSON.stringify(post.tags)}::jsonb, ${JSON.stringify(post.resources)}::jsonb, ${JSON.stringify(post.relatedPostIds)}::jsonb,
-      ${JSON.stringify(post.socialPublishing)}::jsonb, ${JSON.stringify(post.translations)}::jsonb, ${post.createdAt}, ${post.updatedAt}
-    )
-    on conflict (id) do update
-    set author_id = excluded.author_id,
-        category_id = excluded.category_id,
-        status = excluded.status,
-        featured = excluded.featured,
-        published_at = excluded.published_at,
-        scheduled_at = excluded.scheduled_at,
-        cover_media_id = excluded.cover_media_id,
-        og_image_media_id = excluded.og_image_media_id,
-        reading_time = excluded.reading_time,
-        difficulty = excluded.difficulty,
-        tags = excluded.tags,
-        resources = excluded.resources,
-        related_post_ids = excluded.related_post_ids,
-        social_publishing = excluded.social_publishing,
-        translations = excluded.translations,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("blog_posts", {
+    id: post.id,
+    author_id: post.authorId,
+    category_id: post.categoryId,
+    status: post.status,
+    featured: post.featured,
+    published_at: post.publishedAt,
+    scheduled_at: post.scheduledAt,
+    cover_media_id: post.coverMediaId,
+    og_image_media_id: post.ogImageMediaId,
+    reading_time: post.readingTime,
+    difficulty: post.difficulty,
+    tags: post.tags,
+    resources: post.resources,
+    related_post_ids: post.relatedPostIds,
+    social_publishing: post.socialPublishing,
+    translations: post.translations,
+    created_at: post.createdAt,
+    updated_at: post.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }
 
 export async function saveBlogCategory(category: BlogCategoryEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into blog_categories (id, parent_id, order_index, translations, created_at, updated_at)
-    values (${category.id}, ${category.parentId}, ${category.orderIndex}, ${JSON.stringify(category.translations)}::jsonb, ${category.createdAt}, ${category.updatedAt})
-    on conflict (id) do update
-    set parent_id = excluded.parent_id,
-        order_index = excluded.order_index,
-        translations = excluded.translations,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("blog_categories", {
+    id: category.id,
+    parent_id: category.parentId,
+    order_index: category.orderIndex,
+    translations: category.translations,
+    created_at: category.createdAt,
+    updated_at: category.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }
 
 export async function saveBlogTag(tag: BlogTagEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into blog_tags (id, translations, created_at, updated_at)
-    values (${tag.id}, ${JSON.stringify(tag.translations)}::jsonb, ${tag.createdAt}, ${tag.updatedAt})
-    on conflict (id) do update
-    set translations = excluded.translations,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("blog_tags", {
+    id: tag.id,
+    translations: tag.translations,
+    created_at: tag.createdAt,
+    updated_at: tag.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }
 
 export async function createContactEntry(entry: ContactEntryEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into contact_entries (id, type, name, email, company, subject, message, status, created_at, updated_at)
-    values (${entry.id}, ${entry.type}, ${entry.name}, ${entry.email}, ${entry.company}, ${entry.subject}, ${entry.message}, ${entry.status}, ${entry.createdAt}, ${entry.updatedAt})
-  `;
+  await insertRows("contact_entries", {
+    id: entry.id,
+    type: entry.type,
+    name: entry.name,
+    email: entry.email,
+    company: entry.company,
+    subject: entry.subject,
+    message: entry.message,
+    status: entry.status,
+    created_at: entry.createdAt,
+    updated_at: entry.updatedAt
+  }, { returning: "minimal" });
 }
 
 export async function getContactEntries(): Promise<ContactEntryEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     type: string;
     name: string;
@@ -276,7 +247,7 @@ export async function getContactEntries(): Promise<ContactEntryEntity[]> {
     status: string;
     created_at: string;
     updated_at: string;
-  }[]>`select * from contact_entries order by created_at desc`;
+  }>("contact_entries", { orderBy: { column: "created_at", ascending: false } });
   return rows.map((row) => ({
     id: row.id,
     type: row.type,
@@ -293,19 +264,15 @@ export async function getContactEntries(): Promise<ContactEntryEntity[]> {
 
 export async function updateContactEntryStatus(id: string, status: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    update contact_entries
-    set status = ${status},
-        updated_at = ${new Date().toISOString()}
-    where id = ${id}
-  `;
+  await updateRows("contact_entries", {
+    status,
+    updated_at: new Date().toISOString()
+  }, [{ column: "id", operator: "eq", value: id }], { returning: "minimal" });
 }
 
 export async function getMediaFiles(): Promise<MediaFileEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     storage_key: string;
     file_name: string;
@@ -316,7 +283,7 @@ export async function getMediaFiles(): Promise<MediaFileEntity[]> {
     alt_translations: MediaFileEntity["altTranslations"];
     created_at: string;
     updated_at: string;
-  }[]>`select * from media_files order by created_at desc`;
+  }>("media_files", { orderBy: { column: "created_at", ascending: false } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -334,38 +301,23 @@ export async function getMediaFiles(): Promise<MediaFileEntity[]> {
 
 export async function saveMediaFile(file: MediaFileEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into media_files (
-      id, storage_key, file_name, mime_type, size, width, height, alt_translations, created_at, updated_at
-    ) values (
-      ${file.id},
-      ${file.storageKey},
-      ${file.fileName},
-      ${file.mimeType},
-      ${file.size},
-      ${file.width},
-      ${file.height},
-      ${JSON.stringify(file.altTranslations)}::jsonb,
-      ${file.createdAt},
-      ${file.updatedAt}
-    )
-    on conflict (id) do update
-    set storage_key = excluded.storage_key,
-        file_name = excluded.file_name,
-        mime_type = excluded.mime_type,
-        size = excluded.size,
-        width = excluded.width,
-        height = excluded.height,
-        alt_translations = excluded.alt_translations,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("media_files", {
+    id: file.id,
+    storage_key: file.storageKey,
+    file_name: file.fileName,
+    mime_type: file.mimeType,
+    size: file.size,
+    width: file.width,
+    height: file.height,
+    alt_translations: file.altTranslations,
+    created_at: file.createdAt,
+    updated_at: file.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }
 
 export async function getSocialPublications(): Promise<SocialPublicationEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     blog_post_id: string;
     language_code: string;
@@ -380,7 +332,7 @@ export async function getSocialPublications(): Promise<SocialPublicationEntity[]
     error_message: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from social_publications order by created_at desc`;
+  }>("social_publications", { orderBy: { column: "created_at", ascending: false } });
 
   return rows.map((row) => ({
     id: row.id,
@@ -402,25 +354,20 @@ export async function getSocialPublications(): Promise<SocialPublicationEntity[]
 
 export async function saveSocialPublication(publication: SocialPublicationEntity): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    insert into social_publications (
-      id, blog_post_id, language_code, platform, status, generated_text, final_text, external_post_id, external_url,
-      published_at, retry_count, error_message, created_at, updated_at
-    ) values (
-      ${publication.id}, ${publication.blogPostId}, ${publication.languageCode}, ${publication.platform}, ${publication.status},
-      ${publication.generatedText}, ${publication.finalText}, ${publication.externalPostId}, ${publication.externalUrl},
-      ${publication.publishedAt}, ${publication.retryCount}, ${publication.errorMessage}, ${publication.createdAt}, ${publication.updatedAt}
-    )
-    on conflict (id) do update
-    set status = excluded.status,
-        generated_text = excluded.generated_text,
-        final_text = excluded.final_text,
-        external_post_id = excluded.external_post_id,
-        external_url = excluded.external_url,
-        published_at = excluded.published_at,
-        retry_count = excluded.retry_count,
-        error_message = excluded.error_message,
-        updated_at = excluded.updated_at
-  `;
+  await insertRows("social_publications", {
+    id: publication.id,
+    blog_post_id: publication.blogPostId,
+    language_code: publication.languageCode,
+    platform: publication.platform,
+    status: publication.status,
+    generated_text: publication.generatedText,
+    final_text: publication.finalText,
+    external_post_id: publication.externalPostId,
+    external_url: publication.externalUrl,
+    published_at: publication.publishedAt,
+    retry_count: publication.retryCount,
+    error_message: publication.errorMessage,
+    created_at: publication.createdAt,
+    updated_at: publication.updatedAt
+  }, { onConflict: "id", upsert: true, returning: "minimal" });
 }

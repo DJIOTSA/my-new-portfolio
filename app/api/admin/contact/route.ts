@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { contactEntryStatusSchema } from "@/lib/schemas";
+import { contactEntryStatusSchema } from "@/db/validation/contact-entry-status";
 import { getLeadEntries, updateLeadStatus } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

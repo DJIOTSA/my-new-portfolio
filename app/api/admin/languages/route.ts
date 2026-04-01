@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { languageSchema } from "@/lib/schemas";
+import { languageSchema } from "@/db/validation/language";
 import { getLanguages, upsertLanguages } from "@/services/language-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

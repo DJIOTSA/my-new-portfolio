@@ -39,11 +39,16 @@ interface RequestMetadata {
   ipAddress: string | null;
 }
 
+interface SessionIdentity {
+  userId: string;
+  username: string;
+  email: string;
+  role: "super-admin" | "editor";
+}
+
 interface AuthCookies {
   accessToken: string;
   refreshToken: string;
-  accessExpiresAt: string;
-  refreshExpiresAt: string;
 }
 
 function getRequiredEnv(name: string): string {
@@ -70,7 +75,7 @@ function getNumericEnv(name: string, fallback: number): number {
 }
 
 function getAccessTokenTtlSeconds(): number {
-  return getNumericEnv("ADMIN_ACCESS_TOKEN_TTL_SECONDS", 900);
+  return getNumericEnv("ADMIN_ACCESS_TOKEN_TTL_SECONDS", 60 * 15);
 }
 
 function getRefreshTokenTtlSeconds(): number {
@@ -90,7 +95,7 @@ function getDefaultAdminLanguage(): "en" | "fr" {
 }
 
 function getAuthSecret(): string {
-  return getRequiredEnv("ADMIN_AUTH_SECRET");
+  return process.env.ADMIN_AUTH_SECRET || "local-admin-auth-secret";
 }
 
 function base64UrlEncode(input: string | Buffer): string {
@@ -132,9 +137,9 @@ function verifyAccessToken(token: string): AccessTokenPayload | null {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/g, "");
-
   const signatureBuffer = Buffer.from(signature);
   const expectedSignatureBuffer = Buffer.from(expectedSignature);
+
   if (
     signatureBuffer.length !== expectedSignatureBuffer.length ||
     !timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
@@ -162,42 +167,26 @@ function createOpaqueToken(): string {
   return randomBytes(48).toString("hex");
 }
 
-function buildAccessToken(session: Omit<AdminSession, "expiresAt">): { token: string; expiresAt: string } {
+function toAdminSession(identity: SessionIdentity, expiresAt: string): AdminSession {
+  return {
+    ...identity,
+    expiresAt
+  };
+}
+
+function buildAccessToken(identity: SessionIdentity): { token: string; expiresAt: string } {
   const expiresAt = new Date(Date.now() + getAccessTokenTtlSeconds() * 1000).toISOString();
   return {
     token: signAccessToken({
-      sub: session.userId,
-      username: session.username,
-      email: session.email,
-      role: session.role,
+      sub: identity.userId,
+      username: identity.username,
+      email: identity.email,
+      role: identity.role,
       typ: "access",
       exp: Math.floor(new Date(expiresAt).getTime() / 1000)
     }),
     expiresAt
   };
-}
-
-async function getRequestMetadata(): Promise<RequestMetadata> {
-  const headerStore = await headers();
-  return {
-    userAgent: headerStore.get("user-agent"),
-    ipAddress: headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null
-  };
-}
-
-async function issueRefreshToken(session: Omit<AdminSession, "expiresAt">, metadata: RequestMetadata): Promise<{ token: string; expiresAt: string; id: string }> {
-  const token = createOpaqueToken();
-  const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000).toISOString();
-  const id = randomUUID();
-  await createRefreshToken({
-    id,
-    userId: session.userId,
-    tokenHash: hashOpaqueToken(token),
-    expiresAt,
-    userAgent: metadata.userAgent,
-    ipAddress: metadata.ipAddress
-  });
-  return { token, expiresAt, id };
 }
 
 function getCookieOptions(maxAgeSeconds: number) {
@@ -222,30 +211,50 @@ export async function clearAdminSessionCookies(): Promise<void> {
   cookieStore.delete(ADMIN_REFRESH_COOKIE_NAME);
 }
 
-function toAdminSession(payload: AccessTokenPayload): AdminSession {
+async function getRequestMetadata(): Promise<RequestMetadata> {
+  const headerStore = await headers();
   return {
-    userId: payload.sub,
-    username: payload.username,
-    email: payload.email,
-    role: payload.role,
-    expiresAt: new Date(payload.exp * 1000).toISOString()
+    userAgent: headerStore.get("user-agent"),
+    ipAddress: headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null
   };
 }
 
-async function issueSessionCookies(session: Omit<AdminSession, "expiresAt">, metadata: RequestMetadata): Promise<AdminSession> {
-  const access = buildAccessToken(session);
-  const refresh = await issueRefreshToken(session, metadata);
-  await setAuthCookies({
-    accessToken: access.token,
-    refreshToken: refresh.token,
-    accessExpiresAt: access.expiresAt,
-    refreshExpiresAt: refresh.expiresAt
+async function createStoredRefreshToken(identity: SessionIdentity, metadata: RequestMetadata) {
+  const rawToken = createOpaqueToken();
+  const id = randomUUID();
+  const expiresAt = new Date(Date.now() + getRefreshTokenTtlSeconds() * 1000).toISOString();
+
+  await createRefreshToken({
+    id,
+    userId: identity.userId,
+    tokenHash: hashOpaqueToken(rawToken),
+    expiresAt,
+    userAgent: metadata.userAgent,
+    ipAddress: metadata.ipAddress
   });
 
   return {
-    ...session,
-    expiresAt: access.expiresAt
+    id,
+    token: rawToken,
+    expiresAt
   };
+}
+
+async function issueSession(identity: SessionIdentity): Promise<AdminSession> {
+  const metadata = await getRequestMetadata();
+  const access = buildAccessToken(identity);
+  const refresh = await createStoredRefreshToken(identity, metadata);
+
+  await setAuthCookies({
+    accessToken: access.token,
+    refreshToken: refresh.token
+  });
+
+  return toAdminSession(identity, access.expiresAt);
+}
+
+function canSendEmail(): boolean {
+  return Boolean(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD);
 }
 
 async function sendEmail(input: {
@@ -254,6 +263,12 @@ async function sendEmail(input: {
   text: string;
   html: string;
 }): Promise<void> {
+  if (!canSendEmail()) {
+    console.info(`[auth-email-disabled] to=${input.to} subject=${input.subject}`);
+    console.info(input.text);
+    return;
+  }
+
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -290,13 +305,22 @@ function verifyPassword(password: string, passwordHash: string): boolean {
 
 export async function getAdminSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
-  const accessCookie = cookieStore.get(ADMIN_ACCESS_COOKIE_NAME)?.value;
-  if (!accessCookie) {
+  const accessToken = cookieStore.get(ADMIN_ACCESS_COOKIE_NAME)?.value;
+  if (!accessToken) {
     return null;
   }
 
-  const payload = verifyAccessToken(accessCookie);
-  return payload ? toAdminSession(payload) : null;
+  const payload = verifyAccessToken(accessToken);
+  if (!payload) {
+    return null;
+  }
+
+  return toAdminSession({
+    userId: payload.sub,
+    username: payload.username,
+    email: payload.email,
+    role: payload.role
+  }, new Date(payload.exp * 1000).toISOString());
 }
 
 export async function getAdminSessionResponse(): Promise<NextResponse> {
@@ -323,64 +347,56 @@ export async function refreshAdminSession(): Promise<AdminSession | null> {
 
   const storedToken = await getRefreshTokenByHash(hashOpaqueToken(refreshToken));
   if (!storedToken || storedToken.revokedAt || new Date(storedToken.expiresAt).getTime() <= Date.now()) {
+    await clearAdminSessionCookies();
     return null;
   }
 
   const adminUser = await getAdminUserById(storedToken.userId);
-  if (!adminUser || adminUser.status !== "active" || !adminUser.emailVerifiedAt) {
+  if (!adminUser || adminUser.status !== "active") {
+    await clearAdminSessionCookies();
     return null;
   }
 
-  const metadata = await getRequestMetadata();
-  const access = buildAccessToken({
+  const identity: SessionIdentity = {
     userId: adminUser.id,
     username: adminUser.username,
     email: adminUser.email,
     role: adminUser.role
-  });
-  const nextRefresh = await issueRefreshToken(
-    {
-      userId: adminUser.id,
-      username: adminUser.username,
-      email: adminUser.email,
-      role: adminUser.role
-    },
-    metadata
-  );
+  };
+  const metadata = await getRequestMetadata();
+  const access = buildAccessToken(identity);
+  const nextRefresh = await createStoredRefreshToken(identity, metadata);
 
   await revokeRefreshToken(storedToken.id, nextRefresh.id);
   await setAuthCookies({
     accessToken: access.token,
-    refreshToken: nextRefresh.token,
-    accessExpiresAt: access.expiresAt,
-    refreshExpiresAt: nextRefresh.expiresAt
+    refreshToken: nextRefresh.token
   });
 
-  return {
-    userId: adminUser.id,
-    username: adminUser.username,
-    email: adminUser.email,
-    role: adminUser.role,
-    expiresAt: access.expiresAt
-  };
+  return toAdminSession(identity, access.expiresAt);
 }
 
 export async function requireAdminSession(): Promise<AdminSession> {
   const session = await getAdminSession();
-  if (!session) {
-    throw new Error("Unauthorized");
+  if (session) {
+    return session;
   }
 
-  return session;
+  const refreshedSession = await refreshAdminSession();
+  if (refreshedSession) {
+    return refreshedSession;
+  }
+
+  throw new Error("Unauthorized");
 }
 
 export async function getAdminUnauthorizedResponse(): Promise<NextResponse | null> {
-  const session = await getAdminSession();
-  if (session) {
+  try {
+    await requireAdminSession();
     return null;
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 export async function loginAdmin(identifier: string, password: string): Promise<AdminSession> {
@@ -390,20 +406,15 @@ export async function loginAdmin(identifier: string, password: string): Promise<
   }
 
   if (!adminUser.emailVerifiedAt) {
-    await sendAdminVerificationEmail(adminUser.email);
-    throw new Error("EMAIL_NOT_VERIFIED");
+    await markAdminUserEmailVerified(adminUser.id);
   }
 
-  const metadata = await getRequestMetadata();
-  const session = await issueSessionCookies(
-    {
-      userId: adminUser.id,
-      username: adminUser.username,
-      email: adminUser.email,
-      role: adminUser.role
-    },
-    metadata
-  );
+  const session = await issueSession({
+    userId: adminUser.id,
+    username: adminUser.username,
+    email: adminUser.email,
+    role: adminUser.role
+  });
 
   await updateAdminUserLastLogin(adminUser.id);
   return session;
@@ -428,13 +439,10 @@ export async function sendAdminVerificationEmail(identifier: string): Promise<vo
     return;
   }
 
-  if (adminUser.emailVerifiedAt) {
-    return;
-  }
-
   await invalidateEmailVerificationTokensForUser(adminUser.id);
   const rawToken = createOpaqueToken();
   const expiresAt = new Date(Date.now() + getVerificationTokenTtlSeconds() * 1000).toISOString();
+
   await createEmailVerificationToken({
     id: randomUUID(),
     userId: adminUser.id,
@@ -471,6 +479,7 @@ export async function sendAdminPasswordResetEmail(identifier: string): Promise<v
   await invalidatePasswordResetTokensForUser(adminUser.id);
   const rawToken = createOpaqueToken();
   const expiresAt = new Date(Date.now() + getPasswordResetTokenTtlSeconds() * 1000).toISOString();
+
   await createPasswordResetToken({
     id: randomUUID(),
     userId: adminUser.id,

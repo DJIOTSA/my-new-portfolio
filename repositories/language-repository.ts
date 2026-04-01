@@ -1,5 +1,5 @@
-import { getDb } from "@/lib/db/postgres";
-import { ensureDatabase } from "@/lib/db/init";
+import { ensureDatabase } from "@/db/init";
+import { insertRows, selectRows } from "@/db/supabase-rest";
 import type { LanguageCode, LanguageEntity } from "@/lib/types";
 
 function mapLanguage(row: {
@@ -28,8 +28,7 @@ function mapLanguage(row: {
 
 export async function getLanguages(): Promise<LanguageEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     code: LanguageCode;
     name: string;
@@ -39,7 +38,7 @@ export async function getLanguages(): Promise<LanguageEntity[]> {
     sort_order: number;
     created_at: string;
     updated_at: string;
-  }[]>`select * from languages order by sort_order asc`;
+  }>("languages", { orderBy: { column: "sort_order", ascending: true } });
   return rows.map(mapLanguage);
 }
 
@@ -75,22 +74,15 @@ export async function resolveRequestedLanguage(requestedLanguage: string | undef
 
 export async function upsertLanguages(languages: LanguageEntity[]): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`delete from languages`;
-  for (const language of languages) {
-    await sql`
-      insert into languages (id, code, name, native_name, enabled, is_default, sort_order, created_at, updated_at)
-      values (
-        ${language.id},
-        ${language.code},
-        ${language.name},
-        ${language.nativeName},
-        ${language.enabled},
-        ${language.isDefault},
-        ${language.sortOrder},
-        ${language.createdAt},
-        ${language.updatedAt}
-      )
-    `;
-  }
+  await insertRows("languages", languages.map((language) => ({
+    id: language.id,
+    code: language.code,
+    name: language.name,
+    native_name: language.nativeName,
+    enabled: language.enabled,
+    is_default: language.isDefault,
+    sort_order: language.sortOrder,
+    created_at: language.createdAt,
+    updated_at: language.updatedAt
+  })), { onConflict: "id", upsert: true, returning: "minimal" });
 }

@@ -1,0 +1,14 @@
+export { adminEmailVerificationTokens } from "@/db/schema/admin-email-verification-tokens";
+export { adminPasswordResetTokens } from "@/db/schema/admin-password-reset-tokens";
+export { adminRefreshTokens } from "@/db/schema/admin-refresh-tokens";
+export { adminUsers } from "@/db/schema/admin-users";
+export { blogAuthors } from "@/db/schema/blog-authors";
+export { blogCategories } from "@/db/schema/blog-categories";
+export { blogPosts } from "@/db/schema/blog-posts";
+export { blogTags } from "@/db/schema/blog-tags";
+export { contactEntries } from "@/db/schema/contact-entries";
+export { languages } from "@/db/schema/languages";
+export { mediaFiles } from "@/db/schema/media-files";
+export { portfolioDocuments } from "@/db/schema/portfolio-documents";
+export { siteSettings } from "@/db/schema/site-settings";
+export { socialPublications } from "@/db/schema/social-publications";

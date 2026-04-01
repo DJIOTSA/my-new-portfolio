@@ -1,1 +1,1 @@
-export { default } from "../../../../admin/(protected)/media/page";
+export { default } from "@/components/organisms/admin/pages/admin-media-page";

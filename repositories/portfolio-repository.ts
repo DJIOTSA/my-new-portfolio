@@ -1,27 +1,16 @@
-import { getDb } from "@/lib/db/postgres";
-import { ensureDatabase } from "@/lib/db/init";
+import { ensureDatabase } from "@/db/init";
+import { insertRows, selectRows } from "@/db/supabase-rest";
 import {
-  seedAbout,
-  seedCertifications,
-  seedContact,
-  seedEducation,
-  seedExperiences,
-  seedHero,
-  seedProjects,
-  seedServices,
-  seedSkills
-} from "@/lib/db/seed-data";
-import {
-  aboutSchema,
-  certificationSchema,
-  contactSchema,
-  educationSchema,
-  experienceSchema,
-  heroSchema,
-  projectSchema,
-  serviceSchema,
-  skillCategorySchema
-} from "@/lib/schemas";
+  aboutSchema
+} from "@/db/validation/about";
+import { certificationSchema } from "@/db/validation/certification";
+import { contactSchema } from "@/db/validation/contact-section";
+import { educationSchema } from "@/db/validation/education";
+import { experienceSchema } from "@/db/validation/experience";
+import { heroSchema } from "@/db/validation/hero";
+import { projectSchema } from "@/db/validation/project";
+import { serviceSchema } from "@/db/validation/service";
+import { skillCategorySchema } from "@/db/validation/skill-category";
 import type {
   AboutSectionEntity,
   CertificationEntity,
@@ -38,28 +27,35 @@ interface PortfolioDocumentRow<T> {
   data: T;
 }
 
-function normalizeEntity<T>(value: unknown, fallback: T, parser: { safeParse: (input: unknown) => { success: true; data: T } | { success: false } }): T {
+function normalizeEntity<T>(value: unknown, parser: { safeParse: (input: unknown) => { success: true; data: T } | { success: false } }, sectionKey: string): T {
   const result = parser.safeParse(value);
-  return result.success ? result.data : fallback;
+  if (!result.success) {
+    throw new Error(`Portfolio document ${sectionKey} has invalid shape.`);
+  }
+
+  return result.data;
 }
 
 function normalizeArray<T>(
   value: unknown,
-  fallback: T[],
-  parser: { safeParse: (input: unknown) => { success: true; data: T[] } | { success: false } }
+  parser: { safeParse: (input: unknown) => { success: true; data: T[] } | { success: false } },
+  sectionKey: string
 ): T[] {
   const result = parser.safeParse(value);
-  return result.success ? result.data : fallback;
+  if (!result.success) {
+    throw new Error(`Portfolio document ${sectionKey} has invalid shape.`);
+  }
+
+  return result.data;
 }
 
 async function getPortfolioDocument<T>(sectionKey: string): Promise<T> {
   await ensureDatabase();
-  const sql = getDb();
-  const [document] = await sql<PortfolioDocumentRow<T>[]>`
-    select data
-    from portfolio_documents
-    where section_key = ${sectionKey}
-  `;
+  const [document] = await selectRows<PortfolioDocumentRow<T>>("portfolio_documents", {
+    columns: "data",
+    filters: [{ column: "section_key", operator: "eq", value: sectionKey }],
+    limit: 1
+  });
 
   if (!document) {
     throw new Error(`Portfolio document ${sectionKey} not found.`);
@@ -93,15 +89,15 @@ export async function getPortfolioDocuments(): Promise<{
     ]);
 
   return {
-    hero: normalizeEntity(hero, seedHero, heroSchema),
-    about: normalizeEntity(about, seedAbout, aboutSchema),
-    skills: normalizeArray(skills, seedSkills, skillCategorySchema.array()),
-    services: normalizeArray(services, seedServices, serviceSchema.array()),
-    experiences: normalizeArray(experiences, seedExperiences, experienceSchema.array()),
-    education: normalizeArray(education, seedEducation, educationSchema.array()),
-    certifications: normalizeArray(certifications, seedCertifications, certificationSchema.array()),
-    projects: normalizeArray(projects, seedProjects, projectSchema.array()),
-    contact: normalizeEntity(contact, seedContact, contactSchema)
+    hero: normalizeEntity(hero, heroSchema, "hero"),
+    about: normalizeEntity(about, aboutSchema, "about"),
+    skills: normalizeArray(skills, skillCategorySchema.array(), "skills"),
+    services: normalizeArray(services, serviceSchema.array(), "services"),
+    experiences: normalizeArray(experiences, experienceSchema.array(), "experiences"),
+    education: normalizeArray(education, educationSchema.array(), "education"),
+    certifications: normalizeArray(certifications, certificationSchema.array(), "certifications"),
+    projects: normalizeArray(projects, projectSchema.array(), "projects"),
+    contact: normalizeEntity(contact, contactSchema, "contact")
   };
 }
 
@@ -117,7 +113,6 @@ export async function savePortfolioDocuments(payload: {
   contact: ContactSectionEntity;
 }): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const documents = [
     { key: "hero", value: payload.hero },
     { key: "about", value: payload.about },
@@ -131,12 +126,12 @@ export async function savePortfolioDocuments(payload: {
   ] as const;
 
   for (const document of documents) {
-    await sql`
-      insert into portfolio_documents (id, section_key, data, created_at, updated_at)
-      values (${document.key}, ${document.key}, ${JSON.stringify(document.value)}::jsonb, ${new Date().toISOString()}, ${new Date().toISOString()})
-      on conflict (section_key) do update
-      set data = excluded.data,
-          updated_at = excluded.updated_at
-    `;
+    await insertRows("portfolio_documents", {
+      id: document.key,
+      section_key: document.key,
+      data: document.value,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: "section_key", upsert: true, returning: "minimal" });
   }
 }

@@ -1,1 +1,1 @@
-export { default } from "../../../../admin/(protected)/languages/page";
+export { default } from "@/components/organisms/admin/pages/admin-languages-page";

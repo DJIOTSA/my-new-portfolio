@@ -1,5 +1,5 @@
-import { ensureDatabase } from "@/lib/db/init";
-import { getDb } from "@/lib/db/postgres";
+import { ensureDatabase } from "@/db/init";
+import { deleteRows, insertRows, selectRows, updateRows } from "@/db/supabase-rest";
 import type { AdminUserEntity, AuthOneTimeTokenEntity, RefreshTokenEntity } from "@/lib/types";
 
 function mapAdminUser(row: {
@@ -76,8 +76,7 @@ function mapOneTimeToken(row: {
 
 export async function getAdminUserByUsername(username: string): Promise<AdminUserEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     username: string;
     email: string;
@@ -88,15 +87,14 @@ export async function getAdminUserByUsername(username: string): Promise<AdminUse
     last_login_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_users where username = ${username} limit 1`;
+  }>("admin_users", { filters: [{ column: "username", operator: "eq", value: username }], limit: 1 });
 
   return row ? mapAdminUser(row) : null;
 }
 
 export async function getAdminUserByEmail(email: string): Promise<AdminUserEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     username: string;
     email: string;
@@ -107,7 +105,7 @@ export async function getAdminUserByEmail(email: string): Promise<AdminUserEntit
     last_login_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_users where lower(email) = lower(${email}) limit 1`;
+  }>("admin_users", { filters: [{ column: "email", operator: "ilike", value: email }], limit: 1 });
 
   return row ? mapAdminUser(row) : null;
 }
@@ -120,8 +118,7 @@ export async function getAdminUserByIdentifier(identifier: string): Promise<Admi
 
 export async function getAdminUserById(id: string): Promise<AdminUserEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     username: string;
     email: string;
@@ -132,15 +129,14 @@ export async function getAdminUserById(id: string): Promise<AdminUserEntity | nu
     last_login_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_users where id = ${id} limit 1`;
+  }>("admin_users", { filters: [{ column: "id", operator: "eq", value: id }], limit: 1 });
 
   return row ? mapAdminUser(row) : null;
 }
 
 export async function getAdminUsers(): Promise<AdminUserEntity[]> {
   await ensureDatabase();
-  const sql = getDb();
-  const rows = await sql<{
+  const rows = await selectRows<{
     id: string;
     username: string;
     email: string;
@@ -151,44 +147,32 @@ export async function getAdminUsers(): Promise<AdminUserEntity[]> {
     last_login_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_users order by created_at asc`;
+  }>("admin_users", { orderBy: { column: "created_at", ascending: true } });
 
   return rows.map(mapAdminUser);
 }
 
 export async function updateAdminUserPassword(userId: string, passwordHash: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`
-    update admin_users
-    set password_hash = ${passwordHash},
-        updated_at = ${new Date().toISOString()}
-    where id = ${userId}
-  `;
+  await updateRows("admin_users", {
+    password_hash: passwordHash,
+    updated_at: new Date().toISOString()
+  }, [{ column: "id", operator: "eq", value: userId }], { returning: "minimal" });
 }
 
 export async function markAdminUserEmailVerified(userId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_users
-    set email_verified_at = coalesce(email_verified_at, ${now}),
-        updated_at = ${now}
-    where id = ${userId}
-  `;
+  await updateRows("admin_users", {
+    email_verified_at: now,
+    updated_at: now
+  }, [{ column: "id", operator: "eq", value: userId }], { returning: "minimal" });
 }
 
 export async function updateAdminUserLastLogin(userId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_users
-    set last_login_at = ${now},
-        updated_at = ${now}
-    where id = ${userId}
-  `;
+  await updateRows("admin_users", { last_login_at: now, updated_at: now }, [{ column: "id", operator: "eq", value: userId }], { returning: "minimal" });
 }
 
 export async function createRefreshToken(input: {
@@ -200,21 +184,24 @@ export async function createRefreshToken(input: {
   ipAddress?: string | null;
 }): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    insert into admin_refresh_tokens (
-      id, user_id, token_hash, expires_at, revoked_at, replaced_by_token_id, user_agent, ip_address, created_at, updated_at
-    ) values (
-      ${input.id}, ${input.userId}, ${input.tokenHash}, ${input.expiresAt}, null, null, ${input.userAgent ?? null}, ${input.ipAddress ?? null}, ${now}, ${now}
-    )
-  `;
+  await insertRows("admin_refresh_tokens", {
+    id: input.id,
+    user_id: input.userId,
+    token_hash: input.tokenHash,
+    expires_at: input.expiresAt,
+    revoked_at: null,
+    replaced_by_token_id: null,
+    user_agent: input.userAgent ?? null,
+    ip_address: input.ipAddress ?? null,
+    created_at: now,
+    updated_at: now
+  }, { returning: "minimal" });
 }
 
 export async function getRefreshTokenByHash(tokenHash: string): Promise<RefreshTokenEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     user_id: string;
     token_hash: string;
@@ -225,34 +212,28 @@ export async function getRefreshTokenByHash(tokenHash: string): Promise<RefreshT
     ip_address: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_refresh_tokens where token_hash = ${tokenHash} limit 1`;
+  }>("admin_refresh_tokens", { filters: [{ column: "token_hash", operator: "eq", value: tokenHash }], limit: 1 });
 
   return row ? mapRefreshToken(row) : null;
 }
 
 export async function revokeRefreshToken(tokenId: string, replacedByTokenId?: string | null): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_refresh_tokens
-    set revoked_at = ${now},
-        replaced_by_token_id = ${replacedByTokenId ?? null},
-        updated_at = ${now}
-    where id = ${tokenId}
-  `;
+  await updateRows("admin_refresh_tokens", {
+    revoked_at: now,
+    replaced_by_token_id: replacedByTokenId ?? null,
+    updated_at: now
+  }, [{ column: "id", operator: "eq", value: tokenId }], { returning: "minimal" });
 }
 
 export async function revokeAllRefreshTokensForUser(userId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_refresh_tokens
-    set revoked_at = coalesce(revoked_at, ${now}),
-        updated_at = ${now}
-    where user_id = ${userId}
-  `;
+  await updateRows("admin_refresh_tokens", {
+    revoked_at: now,
+    updated_at: now
+  }, [{ column: "user_id", operator: "eq", value: userId }], { returning: "minimal" });
 }
 
 export async function createEmailVerificationToken(input: {
@@ -262,21 +243,21 @@ export async function createEmailVerificationToken(input: {
   expiresAt: string;
 }): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    insert into admin_email_verification_tokens (
-      id, user_id, token_hash, expires_at, consumed_at, created_at, updated_at
-    ) values (
-      ${input.id}, ${input.userId}, ${input.tokenHash}, ${input.expiresAt}, null, ${now}, ${now}
-    )
-  `;
+  await insertRows("admin_email_verification_tokens", {
+    id: input.id,
+    user_id: input.userId,
+    token_hash: input.tokenHash,
+    expires_at: input.expiresAt,
+    consumed_at: null,
+    created_at: now,
+    updated_at: now
+  }, { returning: "minimal" });
 }
 
 export async function getEmailVerificationTokenByHash(tokenHash: string): Promise<AuthOneTimeTokenEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     user_id: string;
     token_hash: string;
@@ -284,27 +265,23 @@ export async function getEmailVerificationTokenByHash(tokenHash: string): Promis
     consumed_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_email_verification_tokens where token_hash = ${tokenHash} limit 1`;
+  }>("admin_email_verification_tokens", { filters: [{ column: "token_hash", operator: "eq", value: tokenHash }], limit: 1 });
 
   return row ? mapOneTimeToken(row) : null;
 }
 
 export async function consumeEmailVerificationToken(tokenId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_email_verification_tokens
-    set consumed_at = ${now},
-        updated_at = ${now}
-    where id = ${tokenId}
-  `;
+  await updateRows("admin_email_verification_tokens", {
+    consumed_at: now,
+    updated_at: now
+  }, [{ column: "id", operator: "eq", value: tokenId }], { returning: "minimal" });
 }
 
 export async function invalidateEmailVerificationTokensForUser(userId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`delete from admin_email_verification_tokens where user_id = ${userId}`;
+  await deleteRows("admin_email_verification_tokens", [{ column: "user_id", operator: "eq", value: userId }]);
 }
 
 export async function createPasswordResetToken(input: {
@@ -314,21 +291,21 @@ export async function createPasswordResetToken(input: {
   expiresAt: string;
 }): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    insert into admin_password_reset_tokens (
-      id, user_id, token_hash, expires_at, consumed_at, created_at, updated_at
-    ) values (
-      ${input.id}, ${input.userId}, ${input.tokenHash}, ${input.expiresAt}, null, ${now}, ${now}
-    )
-  `;
+  await insertRows("admin_password_reset_tokens", {
+    id: input.id,
+    user_id: input.userId,
+    token_hash: input.tokenHash,
+    expires_at: input.expiresAt,
+    consumed_at: null,
+    created_at: now,
+    updated_at: now
+  }, { returning: "minimal" });
 }
 
 export async function getPasswordResetTokenByHash(tokenHash: string): Promise<AuthOneTimeTokenEntity | null> {
   await ensureDatabase();
-  const sql = getDb();
-  const [row] = await sql<{
+  const [row] = await selectRows<{
     id: string;
     user_id: string;
     token_hash: string;
@@ -336,25 +313,21 @@ export async function getPasswordResetTokenByHash(tokenHash: string): Promise<Au
     consumed_at: string | null;
     created_at: string;
     updated_at: string;
-  }[]>`select * from admin_password_reset_tokens where token_hash = ${tokenHash} limit 1`;
+  }>("admin_password_reset_tokens", { filters: [{ column: "token_hash", operator: "eq", value: tokenHash }], limit: 1 });
 
   return row ? mapOneTimeToken(row) : null;
 }
 
 export async function consumePasswordResetToken(tokenId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
   const now = new Date().toISOString();
-  await sql`
-    update admin_password_reset_tokens
-    set consumed_at = ${now},
-        updated_at = ${now}
-    where id = ${tokenId}
-  `;
+  await updateRows("admin_password_reset_tokens", {
+    consumed_at: now,
+    updated_at: now
+  }, [{ column: "id", operator: "eq", value: tokenId }], { returning: "minimal" });
 }
 
 export async function invalidatePasswordResetTokensForUser(userId: string): Promise<void> {
   await ensureDatabase();
-  const sql = getDb();
-  await sql`delete from admin_password_reset_tokens where user_id = ${userId}`;
+  await deleteRows("admin_password_reset_tokens", [{ column: "user_id", operator: "eq", value: userId }]);
 }

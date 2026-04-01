@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { toAdminAuthErrorResponse } from "@/app/api/admin/auth/error-response";
 import { loginAdmin } from "@/services/auth-service";
 
 export async function POST(request: Request) {
@@ -12,14 +13,11 @@ export async function POST(request: Request) {
     const session = await loginAdmin(body.identifier, body.password);
     return NextResponse.json({ success: true, session });
   } catch (error) {
-    if (error instanceof Error && error.message === "EMAIL_NOT_VERIFIED") {
-      return NextResponse.json({ error: "Email not verified", code: "EMAIL_NOT_VERIFIED" }, { status: 403 });
-    }
-
     if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    return NextResponse.json({ error: "Unable to sign in" }, { status: 500 });
+    console.error("admin login failed", error);
+    return toAdminAuthErrorResponse(error, "Unable to sign in.");
   }
 }

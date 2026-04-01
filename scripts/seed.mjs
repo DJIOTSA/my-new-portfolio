@@ -356,35 +356,127 @@ const adminUser = {
   emailVerifiedAt: process.env.ADMIN_FORCE_EMAIL_VERIFICATION === "true" ? null : now
 };
 
-async function seed() {
-  logStep("Seeding PostgreSQL content...");
-
-  for (const language of languages) {
-    await sql`insert into languages (id, code, name, native_name, enabled, is_default, sort_order, created_at, updated_at) values (${language.id}, ${language.code}, ${language.name}, ${language.nativeName}, ${language.enabled}, ${language.isDefault}, ${language.sortOrder}, ${now}, ${now}) on conflict (id) do update set code = excluded.code, name = excluded.name, native_name = excluded.native_name, enabled = excluded.enabled, is_default = excluded.is_default, sort_order = excluded.sort_order, updated_at = excluded.updated_at`;
+function sqlLiteral(value) {
+  if (value === null || value === undefined) {
+    return "null";
   }
 
-  await sql`insert into site_settings (id, logo_media_id, default_og_image_id, contact_email, linkedin_url, x_url, github_url, course_platform_url, translations, created_at, updated_at) values (${siteSettings.id}, ${siteSettings.logoMediaId}, ${siteSettings.defaultOgImageId}, ${siteSettings.contactEmail}, ${siteSettings.linkedinUrl}, ${siteSettings.xUrl}, ${siteSettings.githubUrl}, ${siteSettings.coursePlatformUrl}, ${JSON.stringify(siteSettings.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set contact_email = excluded.contact_email, linkedin_url = excluded.linkedin_url, x_url = excluded.x_url, github_url = excluded.github_url, course_platform_url = excluded.course_platform_url, translations = excluded.translations, updated_at = excluded.updated_at`;
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function jsonLiteral(value) {
+  return `${sqlLiteral(JSON.stringify(value))}::jsonb`;
+}
+
+function buildSeedSql() {
+  const statements = [];
+
+  for (const language of languages) {
+    statements.push(`insert into languages (id, code, name, native_name, enabled, is_default, sort_order, created_at, updated_at)
+values (${sqlLiteral(language.id)}, ${sqlLiteral(language.code)}, ${sqlLiteral(language.name)}, ${sqlLiteral(language.nativeName)}, ${sqlLiteral(language.enabled)}, ${sqlLiteral(language.isDefault)}, ${sqlLiteral(language.sortOrder)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  code = excluded.code,
+  name = excluded.name,
+  native_name = excluded.native_name,
+  enabled = excluded.enabled,
+  is_default = excluded.is_default,
+  sort_order = excluded.sort_order,
+  updated_at = excluded.updated_at;`);
+  }
+
+  statements.push(`insert into site_settings (id, logo_media_id, default_og_image_id, contact_email, linkedin_url, x_url, github_url, course_platform_url, translations, created_at, updated_at)
+values (${sqlLiteral(siteSettings.id)}, ${sqlLiteral(siteSettings.logoMediaId)}, ${sqlLiteral(siteSettings.defaultOgImageId)}, ${sqlLiteral(siteSettings.contactEmail)}, ${sqlLiteral(siteSettings.linkedinUrl)}, ${sqlLiteral(siteSettings.xUrl)}, ${sqlLiteral(siteSettings.githubUrl)}, ${sqlLiteral(siteSettings.coursePlatformUrl)}, ${jsonLiteral(siteSettings.translations)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  contact_email = excluded.contact_email,
+  linkedin_url = excluded.linkedin_url,
+  x_url = excluded.x_url,
+  github_url = excluded.github_url,
+  course_platform_url = excluded.course_platform_url,
+  translations = excluded.translations,
+  updated_at = excluded.updated_at;`);
 
   for (const document of portfolioDocuments) {
-    await sql`insert into portfolio_documents (id, section_key, data, created_at, updated_at) values (${document.sectionKey}, ${document.sectionKey}, ${JSON.stringify(document.data)}::jsonb, ${now}, ${now}) on conflict (section_key) do update set data = excluded.data, updated_at = excluded.updated_at`;
+    statements.push(`insert into portfolio_documents (id, section_key, data, created_at, updated_at)
+values (${sqlLiteral(document.sectionKey)}, ${sqlLiteral(document.sectionKey)}, ${jsonLiteral(document.data)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (section_key) do update set
+  data = excluded.data,
+  updated_at = excluded.updated_at;`);
   }
 
   for (const category of blogCategories) {
-    await sql`insert into blog_categories (id, parent_id, order_index, translations, created_at, updated_at) values (${category.id}, ${category.parentId}, ${category.orderIndex}, ${JSON.stringify(category.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set parent_id = excluded.parent_id, order_index = excluded.order_index, translations = excluded.translations, updated_at = excluded.updated_at`;
+    statements.push(`insert into blog_categories (id, parent_id, order_index, translations, created_at, updated_at)
+values (${sqlLiteral(category.id)}, ${sqlLiteral(category.parentId)}, ${sqlLiteral(category.orderIndex)}, ${jsonLiteral(category.translations)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  parent_id = excluded.parent_id,
+  order_index = excluded.order_index,
+  translations = excluded.translations,
+  updated_at = excluded.updated_at;`);
   }
 
   for (const tag of blogTags) {
-    await sql`insert into blog_tags (id, translations, created_at, updated_at) values (${tag.id}, ${JSON.stringify(tag.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set translations = excluded.translations, updated_at = excluded.updated_at`;
+    statements.push(`insert into blog_tags (id, translations, created_at, updated_at)
+values (${sqlLiteral(tag.id)}, ${jsonLiteral(tag.translations)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  translations = excluded.translations,
+  updated_at = excluded.updated_at;`);
   }
 
-  await sql`insert into blog_authors (id, avatar_media_id, email, linkedin_url, x_url, github_url, translations, created_at, updated_at) values (${blogAuthor.id}, ${blogAuthor.avatarMediaId}, ${blogAuthor.email}, ${blogAuthor.linkedinUrl}, ${blogAuthor.xUrl}, ${blogAuthor.githubUrl}, ${JSON.stringify(blogAuthor.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set email = excluded.email, linkedin_url = excluded.linkedin_url, x_url = excluded.x_url, github_url = excluded.github_url, translations = excluded.translations, updated_at = excluded.updated_at`;
+  statements.push(`insert into blog_authors (id, avatar_media_id, email, linkedin_url, x_url, github_url, translations, created_at, updated_at)
+values (${sqlLiteral(blogAuthor.id)}, ${sqlLiteral(blogAuthor.avatarMediaId)}, ${sqlLiteral(blogAuthor.email)}, ${sqlLiteral(blogAuthor.linkedinUrl)}, ${sqlLiteral(blogAuthor.xUrl)}, ${sqlLiteral(blogAuthor.githubUrl)}, ${jsonLiteral(blogAuthor.translations)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  email = excluded.email,
+  linkedin_url = excluded.linkedin_url,
+  x_url = excluded.x_url,
+  github_url = excluded.github_url,
+  translations = excluded.translations,
+  updated_at = excluded.updated_at;`);
 
   for (const post of blogPosts) {
-    await sql`insert into blog_posts (id, author_id, category_id, status, featured, published_at, scheduled_at, cover_media_id, og_image_media_id, reading_time, difficulty, tags, resources, related_post_ids, social_publishing, translations, created_at, updated_at) values (${post.id}, ${post.authorId}, ${post.categoryId}, ${post.status}, ${post.featured}, ${post.publishedAt}, ${post.scheduledAt}, ${post.coverMediaId}, ${post.ogImageMediaId}, ${post.readingTime}, ${post.difficulty}, ${JSON.stringify(post.tags)}::jsonb, ${JSON.stringify(post.resources)}::jsonb, ${JSON.stringify(post.relatedPostIds)}::jsonb, ${JSON.stringify(post.socialPublishing)}::jsonb, ${JSON.stringify(post.translations)}::jsonb, ${now}, ${now}) on conflict (id) do update set author_id = excluded.author_id, category_id = excluded.category_id, status = excluded.status, featured = excluded.featured, published_at = excluded.published_at, scheduled_at = excluded.scheduled_at, cover_media_id = excluded.cover_media_id, og_image_media_id = excluded.og_image_media_id, reading_time = excluded.reading_time, difficulty = excluded.difficulty, tags = excluded.tags, resources = excluded.resources, related_post_ids = excluded.related_post_ids, social_publishing = excluded.social_publishing, translations = excluded.translations, updated_at = excluded.updated_at`;
+    statements.push(`insert into blog_posts (id, author_id, category_id, status, featured, published_at, scheduled_at, cover_media_id, og_image_media_id, reading_time, difficulty, tags, resources, related_post_ids, social_publishing, translations, created_at, updated_at)
+values (${sqlLiteral(post.id)}, ${sqlLiteral(post.authorId)}, ${sqlLiteral(post.categoryId)}, ${sqlLiteral(post.status)}, ${sqlLiteral(post.featured)}, ${sqlLiteral(post.publishedAt)}, ${sqlLiteral(post.scheduledAt)}, ${sqlLiteral(post.coverMediaId)}, ${sqlLiteral(post.ogImageMediaId)}, ${sqlLiteral(post.readingTime)}, ${sqlLiteral(post.difficulty)}, ${jsonLiteral(post.tags)}, ${jsonLiteral(post.resources)}, ${jsonLiteral(post.relatedPostIds)}, ${jsonLiteral(post.socialPublishing)}, ${jsonLiteral(post.translations)}, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (id) do update set
+  author_id = excluded.author_id,
+  category_id = excluded.category_id,
+  status = excluded.status,
+  featured = excluded.featured,
+  published_at = excluded.published_at,
+  scheduled_at = excluded.scheduled_at,
+  cover_media_id = excluded.cover_media_id,
+  og_image_media_id = excluded.og_image_media_id,
+  reading_time = excluded.reading_time,
+  difficulty = excluded.difficulty,
+  tags = excluded.tags,
+  resources = excluded.resources,
+  related_post_ids = excluded.related_post_ids,
+  social_publishing = excluded.social_publishing,
+  translations = excluded.translations,
+  updated_at = excluded.updated_at;`);
   }
 
-  await sql`insert into admin_users (id, username, email, password_hash, role, status, email_verified_at, last_login_at, created_at, updated_at) values (${adminUser.id}, ${adminUser.username}, ${adminUser.email}, ${adminUser.passwordHash}, ${adminUser.role}, ${adminUser.status}, ${adminUser.emailVerifiedAt}, ${null}, ${now}, ${now}) on conflict (username) do update set email = excluded.email, password_hash = excluded.password_hash, role = excluded.role, status = excluded.status, email_verified_at = coalesce(admin_users.email_verified_at, excluded.email_verified_at), updated_at = excluded.updated_at`;
+  statements.push(`insert into admin_users (id, username, email, password_hash, role, status, email_verified_at, last_login_at, created_at, updated_at)
+values (${sqlLiteral(adminUser.id)}, ${sqlLiteral(adminUser.username)}, ${sqlLiteral(adminUser.email)}, ${sqlLiteral(adminUser.passwordHash)}, ${sqlLiteral(adminUser.role)}, ${sqlLiteral(adminUser.status)}, ${sqlLiteral(adminUser.emailVerifiedAt)}, null, ${sqlLiteral(now)}, ${sqlLiteral(now)})
+on conflict (username) do update set
+  email = excluded.email,
+  password_hash = excluded.password_hash,
+  role = excluded.role,
+  status = excluded.status,
+  email_verified_at = coalesce(admin_users.email_verified_at, excluded.email_verified_at),
+  updated_at = excluded.updated_at;`);
 
+  return `${statements.join("\n\n")}\n`;
+}
+
+async function seed() {
+  logStep("Seeding PostgreSQL content...");
+  await sql.unsafe(buildSeedSql());
   logStep("Seed completed.");
 }
 

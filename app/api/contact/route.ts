@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { contactEntrySchema } from "@/lib/schemas";
+import { contactEntrySchema } from "@/db/validation/contact-entry";
 import { createLead } from "@/services/blog-service";
 
 export async function POST(request: Request) {

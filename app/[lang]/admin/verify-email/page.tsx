@@ -1,1 +1,1 @@
-export { default } from "../../../admin/verify-email/page";
+export { default } from "@/components/organisms/admin/pages/admin-verify-email-page";

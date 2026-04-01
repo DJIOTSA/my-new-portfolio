@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { portfolioAdminSchema } from "@/lib/schemas";
+import { portfolioAdminSchema } from "@/db/validation/portfolio-admin";
 import { getPortfolioDocuments, savePortfolioDocuments } from "@/repositories/portfolio-repository";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

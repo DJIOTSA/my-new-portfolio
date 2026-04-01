@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { mediaFileSchema } from "@/lib/schemas";
+import { mediaFileSchema } from "@/db/validation/media-file";
 import { getAdminMediaFiles, saveAdminMediaFile } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

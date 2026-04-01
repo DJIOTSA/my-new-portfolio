@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { siteSettingsSchema } from "@/lib/schemas";
+import { siteSettingsSchema } from "@/db/validation/site-settings";
 import { getAdminSiteSettings, saveAdminSiteSettings } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { blogTagSchema } from "@/lib/schemas";
+import { blogTagSchema } from "@/db/validation/blog-tag";
 import { getAdminBlogData, saveAdminBlogTag } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

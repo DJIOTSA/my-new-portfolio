@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { socialPublicationSchema } from "@/lib/schemas";
+import { socialPublicationSchema } from "@/db/validation/social-publication";
 import { getAdminSocialPublications, saveAdminSocialPublication } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

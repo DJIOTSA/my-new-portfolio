@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { blogCategorySchema } from "@/lib/schemas";
+import { blogCategorySchema } from "@/db/validation/blog-category";
 import { getAdminBlogData, saveAdminBlogCategory } from "@/services/blog-service";
 import { getAdminUnauthorizedResponse } from "@/services/auth-service";
 

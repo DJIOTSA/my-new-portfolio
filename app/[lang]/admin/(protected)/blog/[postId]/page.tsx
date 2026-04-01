@@ -1,1 +1,1 @@
-export { default } from "../../../../../admin/(protected)/blog/[postId]/page";
+export { default } from "@/components/organisms/admin/pages/admin-edit-blog-post-page";

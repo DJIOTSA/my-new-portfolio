@@ -12,13 +12,20 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { lang } = await params;
   const languageCode: LanguageCode = lang === "fr" ? "fr" : "en";
-  const siteSettings = await getAdminSiteSettings();
-  const translation = siteSettings.translations?.[languageCode] ?? siteSettings.translations?.en ?? {
+  const fallbackTranslation = {
     siteTitle: "Djiotsa Christian",
     siteDescription: "Portfolio",
     defaultSeoTitle: "Djiotsa Christian",
     defaultSeoDescription: "Portfolio"
   };
+  let translation = fallbackTranslation;
+
+  try {
+    const siteSettings = await getAdminSiteSettings();
+    translation = siteSettings.translations?.[languageCode] ?? siteSettings.translations?.en ?? fallbackTranslation;
+  } catch (error) {
+    console.error("layout metadata failed to load site settings", error);
+  }
 
   return buildPageMetadata({
     title: translation.defaultSeoTitle,

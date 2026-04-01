@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BlogLocaleSwitcher } from "@/components/molecules/blog-locale-switcher";
 import { buildPageMetadata } from "@/lib/seo";
 import { formatDate } from "@/lib/utils";
+import { BlogBackButton } from "@/components/molecules/blog-back-button";
 import { getBlogPostBySlug } from "@/services/blog-service";
 
 export async function generateMetadata({
@@ -44,9 +46,13 @@ export default async function BlogDetailPage({
     <main className="min-h-screen bg-white">
       <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href={`/${lang}/blog`} className="text-blue-700 font-medium">
-            Back to blog
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <BlogBackButton
+              href={`/${lang}/blog`}
+              className="rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+            />
+            <BlogLocaleSwitcher currentLocale={lang as "en" | "fr"} />
+          </div>
           <span className="mt-8 inline-flex text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
             {post.category.name}
           </span>
@@ -61,6 +67,9 @@ export default async function BlogDetailPage({
       </div>
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="blog-content max-w-none" dangerouslySetInnerHTML={{ __html: post.contentHtml }} />
+        <div className="mt-10 flex justify-start">
+          <BlogBackButton href={`/${lang}/blog`} />
+        </div>
         <div className="mt-12 rounded-2xl bg-gray-50 p-8">
           <h2 className="text-2xl font-bold text-gray-900">{post.courseCtaTitle}</h2>
           <p className="mt-3 text-gray-600">{post.courseCtaDescription}</p>
@@ -84,6 +93,13 @@ export default async function BlogDetailPage({
             </div>
           </div>
         ) : null}
+        <div className="mt-12 flex justify-center border-t border-gray-100 pt-8">
+          <BlogBackButton
+            href={`/${lang}/blog`}
+            label="Back to blog listing"
+            className="min-w-52"
+          />
+        </div>
       </article>
     </main>
   );

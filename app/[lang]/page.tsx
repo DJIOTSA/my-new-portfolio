@@ -1,24 +1,10 @@
 import { Calendar, Code, ExternalLink, Globe, Heart, Linkedin, Mail, MapPin, Phone, Award, GraduationCap } from "lucide-react";
 import Link from "next/link";
-import { getIconComponent } from "@/components/shared/icon-map";
-import { ContactForm } from "@/features/portfolio/components/contact-form";
-import { PortfolioHeader } from "@/features/portfolio/components/header";
+import { getIconComponent } from "@/components/atoms/icon-map";
+import { ContactForm } from "@/components/organisms/portfolio/contact-form";
+import { PortfolioHeader } from "@/components/organisms/portfolio/header";
 import { getFeaturedBlogPosts } from "@/services/blog-service";
 import { getPortfolioContent } from "@/services/portfolio-service";
-
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> {
-  let timeoutId: NodeJS.Timeout | undefined;
-
-  const timeoutPromise = new Promise<T>((resolve) => {
-    timeoutId = setTimeout(() => resolve(fallbackValue), timeoutMs);
-  });
-
-  const result = await Promise.race([promise, timeoutPromise]);
-  if (timeoutId) {
-    clearTimeout(timeoutId);
-  }
-  return result;
-}
 
 export default async function PortfolioPage({
   params
@@ -27,11 +13,7 @@ export default async function PortfolioPage({
 }) {
   const { lang } = await params;
   const content = await getPortfolioContent(lang);
-  const featuredPosts = await withTimeout(
-    getFeaturedBlogPosts(lang).catch(() => []),
-    2000,
-    []
-  );
+  const featuredPosts = await getFeaturedBlogPosts(lang);
 
   return (
     <div className="min-h-screen bg-white">
