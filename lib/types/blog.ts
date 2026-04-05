@@ -111,6 +111,7 @@ export interface BlogPostEntity {
 }
 
 export interface ResolvedBlogPost extends LocalizedResponseMeta, Omit<BlogPostEntity, "translations">, BlogPostTranslation {
+  slugByLocale: Partial<Record<LanguageCode, string>>;
   author: BlogAuthorEntity & { name: string; bio: string };
   category: BlogCategoryEntity & { name: string; slug: string; description: string };
   resolvedTags: Array<BlogTagEntity & { name: string; slug: string }>;

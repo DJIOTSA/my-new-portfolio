@@ -18,15 +18,18 @@ export async function generateMetadata({
     return {};
   }
 
+  const slugByLocale = post.slugByLocale ?? {};
+  const currentSlug = slugByLocale[lang as "en" | "fr"] ?? post.slug;
+
   return buildPageMetadata({
     title: post.seoTitle,
     description: post.seoDescription,
-    pathname: `/${lang}/blog/${post.slug}`,
+    pathname: `/${lang}/blog/${currentSlug}`,
     locale: lang,
     ogImage: undefined,
     alternates: {
-      en: `/en/blog/${post.slug}`,
-      fr: `/fr/blog/${post.slug}`
+      en: `/en/blog/${slugByLocale.en ?? currentSlug}`,
+      fr: `/fr/blog/${slugByLocale.fr ?? currentSlug}`
     }
   });
 }
@@ -51,7 +54,7 @@ export default async function BlogDetailPage({
               href={`/${lang}/blog`}
               className="rounded-full border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
             />
-            <BlogLocaleSwitcher currentLocale={lang as "en" | "fr"} />
+            <BlogLocaleSwitcher currentLocale={lang as "en" | "fr"} slugByLocale={post.slugByLocale} />
           </div>
           <span className="mt-8 inline-flex text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
             {post.category.name}

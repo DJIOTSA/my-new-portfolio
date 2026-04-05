@@ -173,7 +173,11 @@ function resolveBlogPostEntity(
       description: localizedCategory.value.description
     },
     resolvedTags,
-    relatedPosts: []
+    relatedPosts: [],
+    slugByLocale: {
+      en: post.translations?.en?.slug,
+      fr: post.translations?.fr?.slug
+    }
   };
 }
 
@@ -193,7 +197,16 @@ export async function getBlogPostBySlug(language: string | undefined, slug: stri
       translations[defaultLanguage] ??
       translations.en ??
       translations.fr;
-    return localized?.slug === slug && post.status === "published";
+
+    if (post.status !== "published") {
+      return false;
+    }
+
+    if (localized?.slug === slug) {
+      return true;
+    }
+
+    return Object.values(translations).some((entry) => entry?.slug === slug);
   });
 
   if (!matchedPost) {
@@ -223,7 +236,7 @@ export async function getBlogPostBySlug(language: string | undefined, slug: stri
       } catch {
         return [];
       }
-    });
+  });
 
   return resolved;
 }
