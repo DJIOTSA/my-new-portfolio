@@ -16,7 +16,7 @@ import type { MediaFileEntity } from "@/lib/types";
 type MediaFileFormValues = z.infer<typeof mediaFileSchema>;
 
 const emptyMediaFile: MediaFileFormValues = {
-  id: "",
+  id: 1,
   storageKey: "",
   fileName: "",
   mimeType: "",
@@ -103,7 +103,7 @@ export default function AdminMediaPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>ID</Label>
-                <Input {...form.register("id")} placeholder="media_file_1" />
+                <Input type="number" min={1} step={1} {...form.register("id", { valueAsNumber: true })} />
               </div>
               <div className="space-y-2">
                 <Label>Storage Key</Label>

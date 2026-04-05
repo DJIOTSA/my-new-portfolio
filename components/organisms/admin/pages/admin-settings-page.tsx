@@ -15,6 +15,11 @@ import type { AdminUserEntity } from "@/lib/types";
 
 type SiteSettingsFormValues = z.infer<typeof siteSettingsSchema>;
 
+function toOptionalNumber(value: unknown): number | null {
+  const numeric = typeof value === "string" ? Number(value) : typeof value === "number" ? value : null;
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 export default function AdminSettingsPage() {
   const { locale } = useAdminLocale();
   const queryClient = useQueryClient();
@@ -75,11 +80,25 @@ export default function AdminSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Logo Media ID</Label>
-                <Input {...form.register("logoMediaId")} />
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  {...form.register("logoMediaId", {
+                    setValueAs: (value) => toOptionalNumber(value)
+                  })}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Default OG Image ID</Label>
-                <Input {...form.register("defaultOgImageId")} />
+                <Input
+                  type="number"
+                  min={1}
+                  step={1}
+                  {...form.register("defaultOgImageId", {
+                    setValueAs: (value) => toOptionalNumber(value)
+                  })}
+                />
               </div>
             </div>
             <Tabs defaultValue="en">

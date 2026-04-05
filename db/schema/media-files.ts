@@ -1,7 +1,7 @@
-import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const mediaFiles = pgTable("media_files", {
-  id: text("id").primaryKey(),
+  id: serial("id").primaryKey(),
   storageKey: text("storage_key").notNull(),
   fileName: text("file_name").notNull(),
   mimeType: text("mime_type").notNull(),

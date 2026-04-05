@@ -1,8 +1,8 @@
-import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const blogAuthors = pgTable("blog_authors", {
   id: text("id").primaryKey(),
-  avatarMediaId: text("avatar_media_id"),
+  avatarMediaId: integer("avatar_media_id"),
   email: text("email").notNull(),
   linkedinUrl: text("linkedin_url").notNull(),
   xUrl: text("x_url").notNull(),

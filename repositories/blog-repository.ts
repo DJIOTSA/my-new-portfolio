@@ -15,8 +15,8 @@ export async function getSiteSettings(): Promise<SiteSettingsEntity> {
   await ensureDatabase();
   const [row] = await selectRows<{
     id: string;
-    logo_media_id: string | null;
-    default_og_image_id: string | null;
+    logo_media_id: number | null;
+    default_og_image_id: number | null;
     contact_email: string;
     linkedin_url: string;
     x_url: string;
@@ -104,7 +104,7 @@ export async function getBlogAuthors(): Promise<BlogAuthorEntity[]> {
   await ensureDatabase();
   const rows = await selectRows<{
     id: string;
-    avatar_media_id: string | null;
+    avatar_media_id: number | null;
     email: string;
     linkedin_url: string;
     x_url: string;
@@ -137,8 +137,8 @@ export async function getBlogPosts(): Promise<BlogPostEntity[]> {
     featured: boolean;
     published_at: string | null;
     scheduled_at: string | null;
-    cover_media_id: string | null;
-    og_image_media_id: string | null;
+    cover_media_id: number | null;
+    og_image_media_id: number | null;
     reading_time: number;
     difficulty: BlogPostEntity["difficulty"];
     tags: string[];
@@ -273,7 +273,7 @@ export async function updateContactEntryStatus(id: string, status: string): Prom
 export async function getMediaFiles(): Promise<MediaFileEntity[]> {
   await ensureDatabase();
   const rows = await selectRows<{
-    id: string;
+    id: number;
     storage_key: string;
     file_name: string;
     mime_type: string;
