@@ -10,8 +10,8 @@ const siteSettingsTranslationSchema = z.object({
 
 export const siteSettingsSchema = z.object({
   id: z.string().min(1),
-  logoMediaId: z.string().nullable(),
-  defaultOgImageId: z.string().nullable(),
+  logoMediaId: z.number().int().positive().nullable(),
+  defaultOgImageId: z.number().int().positive().nullable(),
   contactEmail: z.string().email(),
   linkedinUrl: z.string().url(),
   xUrl: z.string().url(),

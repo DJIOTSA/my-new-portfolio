@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { ArrowLeft, Plus, Save } from "lucide-react";
+import { ArrowLeft, ChevronsUpDown, Maximize2, Plus, Save } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@/components/ui";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useAdminLocale } from "@/components/organisms/admin/admin-locale-provider";
 import { TiptapEditor } from "@/components/organisms/blog/tiptap-editor";
 import { useAdminQuery } from "@/hooks/use-admin-query";
@@ -205,6 +206,15 @@ function normalizeNullableString(value: string | null | undefined): string | nul
   return normalized ? normalized : null;
 }
 
+function normalizeNullableNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const numeric = typeof value === "string" ? Number(value) : value;
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -220,6 +230,28 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
     resolver: zodResolver(editorBlogPostSchema),
     defaultValues: createEmptyPost([], [])
   });
+  const relatedSelections = form.watch("relatedPostsFieldArray");
+  const [relatedSearchByRow, setRelatedSearchByRow] = useState<Record<string, string>>({});
+  const [openRelatedSelector, setOpenRelatedSelector] = useState<string | null>(null);
+  const relatedPostOptions = useMemo(
+    () =>
+      (data?.posts ?? [])
+        .filter((post) => !postId || post.id !== postId)
+        .map((post) => {
+          const title = post.translations.en?.title ?? post.translations.fr?.title ?? post.id;
+          const excerpt = post.translations.en?.excerpt ?? post.translations.fr?.excerpt ?? "";
+          return {
+            id: post.id,
+            label: `${title} (${post.id})`,
+            searchText: `${title} ${excerpt} ${post.id}`.toLowerCase()
+          };
+        }),
+    [data?.posts, postId]
+  );
+  const remainingRelatedOptions = useMemo(() => {
+    const selectedIds = new Set((relatedSelections ?? []).map((entry) => entry?.value).filter(Boolean));
+    return relatedPostOptions.filter((option) => !selectedIds.has(option.id));
+  }, [relatedPostOptions, relatedSelections]);
   const isSubmitting = form.formState.isSubmitting;
 
   const tagsFieldArray = useFieldArray({ control: form.control, name: "tagsFieldArray" });
@@ -241,8 +273,8 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
       ...values,
       publishedAt: normalizeNullableString(values.publishedAt),
       scheduledAt: normalizeNullableString(values.scheduledAt),
-      coverMediaId: normalizeNullableString(values.coverMediaId),
-      ogImageMediaId: normalizeNullableString(values.ogImageMediaId),
+      coverMediaId: normalizeNullableNumber(values.coverMediaId),
+      ogImageMediaId: normalizeNullableNumber(values.ogImageMediaId),
       tags: fromFieldArray(values.tagsFieldArray),
       relatedPostIds: fromFieldArray(values.relatedPostsFieldArray),
       resources: normalizeResourcesArray(values.resources)
@@ -394,11 +426,25 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
           </div>
           <div className="space-y-2 xl:col-span-2">
             <Label>Cover media ID</Label>
-            <Input {...form.register("coverMediaId")} />
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              {...form.register("coverMediaId", {
+                setValueAs: (value) => normalizeNullableNumber(value)
+              })}
+            />
           </div>
           <div className="space-y-2 xl:col-span-2">
             <Label>OG image media ID</Label>
-            <Input {...form.register("ogImageMediaId")} />
+            <Input
+              type="number"
+              min={1}
+              step={1}
+              {...form.register("ogImageMediaId", {
+                setValueAs: (value) => normalizeNullableNumber(value)
+              })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -423,107 +469,118 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
 
         {(["en", "fr"] as const).map((language) => (
           <TabsContent key={language} value={language}>
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>{language === "en" ? "Article Content" : "Contenu de l'article"}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div className="space-y-2">
-                      <Label>Title</Label>
-                      <Input {...form.register(`translations.${language}.title`)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Slug</Label>
-                      <Input {...form.register(`translations.${language}.slug`)} />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Excerpt</Label>
-                    <Textarea rows={4} {...form.register(`translations.${language}.excerpt`)} />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-                      <p className="text-sm font-medium text-blue-900">
-                        {locale === "fr"
-                          ? "Zone d'edition principale"
-                          : "Primary editing area"}
-                      </p>
-                      <p className="mt-1 text-sm text-blue-800">
-                        {locale === "fr"
-                          ? "Le grand editeur ci-dessous est l'endroit ou vous redigez le corps complet de l'article."
-                          : "The large editor below is where you write the full article body."}
-                      </p>
-                    </div>
-                    <TiptapEditor
-                      contentHtml={form.watch(`translations.${language}.contentHtml`) ?? ""}
-                      contentJson={form.watch(`translations.${language}.contentJson`) ?? ""}
-                      onChange={({ html, json }) => {
-                        form.setValue(`translations.${language}.contentHtml`, html);
-                        form.setValue(`translations.${language}.contentJson`, json);
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="space-y-4">
+              {postId ? (
+                <div className="flex justify-end">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`${adminBasePath}/blog/${postId}/body/${language}`}>
+                      <Maximize2 className="mr-2 h-4 w-4" />
+                      {language === "fr" ? "Plein ecran" : "Full canvas"}
+                    </Link>
+                  </Button>
+                </div>
+              ) : null}
 
-              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>SEO</CardTitle>
+                    <CardTitle>{language === "en" ? "Article Content" : "Contenu de l'article"}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
+                  <CardContent className="space-y-5">
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
                       <div className="space-y-2">
-                        <Label>SEO title</Label>
-                        <Input {...form.register(`translations.${language}.seoTitle`)} />
+                        <Label>Title</Label>
+                        <Input {...form.register(`translations.${language}.title`)} />
                       </div>
                       <div className="space-y-2">
-                        <Label>Canonical URL</Label>
-                        <Input {...form.register(`translations.${language}.canonicalUrl`)} />
+                        <Label>Slug</Label>
+                        <Input {...form.register(`translations.${language}.slug`)} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>SEO description</Label>
-                      <Textarea rows={4} {...form.register(`translations.${language}.seoDescription`)} />
+                      <Label>Excerpt</Label>
+                      <Textarea rows={4} {...form.register(`translations.${language}.excerpt`)} />
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Social share title</Label>
-                        <Input {...form.register(`translations.${language}.socialShareTitle`)} />
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                        <p className="text-sm font-medium text-blue-900">
+                          {locale === "fr" ? "Zone d'edition principale" : "Primary editing area"}
+                        </p>
+                        <p className="mt-1 text-sm text-blue-800">
+                          {locale === "fr"
+                            ? "Le grand editeur ci-dessous est l'endroit ou vous redigez le corps complet de l'article."
+                            : "The large editor below is where you write the full article body."}
+                        </p>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Social share description</Label>
-                        <Input {...form.register(`translations.${language}.socialShareDescription`)} />
-                      </div>
+                      <TiptapEditor
+                        contentHtml={form.watch(`translations.${language}.contentHtml`) ?? ""}
+                        contentJson={form.watch(`translations.${language}.contentJson`) ?? ""}
+                        onChange={({ html, json }) => {
+                          form.setValue(`translations.${language}.contentHtml`, html);
+                          form.setValue(`translations.${language}.contentJson`, json);
+                        }}
+                      />
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Course CTA</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Course CTA title</Label>
-                      <Input {...form.register(`translations.${language}.courseCtaTitle`)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Course CTA label</Label>
-                      <Input {...form.register(`translations.${language}.courseCtaLabel`)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Course CTA description</Label>
-                      <Textarea rows={4} {...form.register(`translations.${language}.courseCtaDescription`)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Course CTA URL</Label>
-                      <Input {...form.register(`translations.${language}.courseCtaUrl`)} />
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>SEO</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>SEO title</Label>
+                          <Input {...form.register(`translations.${language}.seoTitle`)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Canonical URL</Label>
+                          <Input {...form.register(`translations.${language}.canonicalUrl`)} />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>SEO description</Label>
+                        <Textarea rows={4} {...form.register(`translations.${language}.seoDescription`)} />
+                      </div>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Social share title</Label>
+                          <Input {...form.register(`translations.${language}.socialShareTitle`)} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Social share description</Label>
+                          <Input {...form.register(`translations.${language}.socialShareDescription`)} />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Course CTA</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Course CTA title</Label>
+                        <Input {...form.register(`translations.${language}.courseCtaTitle`)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Course CTA label</Label>
+                        <Input {...form.register(`translations.${language}.courseCtaLabel`)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Course CTA description</Label>
+                        <Textarea rows={4} {...form.register(`translations.${language}.courseCtaDescription`)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Course CTA URL</Label>
+                        <Input {...form.register(`translations.${language}.courseCtaUrl`)} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -555,15 +612,91 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle>Related posts</CardTitle>
-            <Button type="button" variant="outline" size="sm" onClick={() => relatedPostsFieldArray.append({ value: "" })}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => relatedPostsFieldArray.append({ value: "" })}
+              disabled={!remainingRelatedOptions.length}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             {relatedPostsFieldArray.fields.map((field, index) => (
-              <div key={field.id} className="flex gap-2">
-                <Input {...form.register(`relatedPostsFieldArray.${index}.value`)} placeholder="blog_post_id" />
+              <div key={field.id} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                {(() => {
+                  const currentValue = relatedSelections?.[index]?.value ?? "";
+                  const searchValue = relatedSearchByRow[field.id] ?? "";
+                  const takenIds = new Set(
+                    (relatedSelections ?? [])
+                      .map((entry, entryIndex) => (entryIndex === index ? "" : entry?.value ?? ""))
+                      .filter(Boolean)
+                  );
+                  const availableOptions = relatedPostOptions.filter((option) => !takenIds.has(option.id));
+                  const query = searchValue.trim().toLowerCase();
+                  const filteredOptions = query
+                    ? availableOptions.filter((option) => option.searchText.includes(query))
+                    : availableOptions;
+                  const currentOption = currentValue
+                    ? relatedPostOptions.find((option) => option.id === currentValue)
+                    : null;
+                  const emptyMessage = !relatedPostOptions.length
+                    ? "No other posts are available to relate yet."
+                    : availableOptions.length === 0
+                      ? "All other posts are already selected."
+                      : "No posts match the current search.";
+                  const isOpen = openRelatedSelector === field.id;
+
+                  return (
+                    <div className="w-full sm:max-w-[420px]">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-between truncate"
+                        onClick={() => setOpenRelatedSelector(isOpen ? null : field.id)}
+                        disabled={!relatedPostOptions.length}
+                      >
+                        <span className="truncate">
+                          {currentOption?.label ?? "Select related post"}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-60" />
+                      </Button>
+                      {isOpen ? (
+                        <div className="relative">
+                          <div className="absolute z-20 mt-2 w-full sm:max-w-[420px]">
+                            <Command>
+                              <CommandInput
+                                placeholder="Search by title, excerpt, or id"
+                                value={searchValue}
+                                onValueChange={(value) =>
+                                  setRelatedSearchByRow((prev) => ({ ...prev, [field.id]: value }))
+                                }
+                              />
+                              <CommandList>
+                                {filteredOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.id}
+                                    value={option.id}
+                                    onSelect={(value) => {
+                                      form.setValue(`relatedPostsFieldArray.${index}.value`, value);
+                                      setOpenRelatedSelector(null);
+                                    }}
+                                    disabled={takenIds.has(option.id)}
+                                  >
+                                    {option.label}
+                                  </CommandItem>
+                                ))}
+                                {!filteredOptions.length ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
+                              </CommandList>
+                            </Command>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })()}
                 <Button type="button" variant="outline" onClick={() => relatedPostsFieldArray.remove(index)}>
                   Remove
                 </Button>
@@ -571,6 +704,9 @@ export function AdminBlogPostEditor({ postId }: BlogPostEditorProps) {
             ))}
             {!relatedPostsFieldArray.fields.length ? (
               <p className="text-sm text-gray-500">No related posts configured.</p>
+            ) : null}
+            {!remainingRelatedOptions.length ? (
+              <p className="text-sm text-gray-500">No more posts are available to select.</p>
             ) : null}
           </CardContent>
         </Card>

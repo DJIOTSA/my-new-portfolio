@@ -8,8 +8,8 @@ export type SocialPublicationStatus = (typeof SOCIAL_PUBLICATION_STATUSES)[numbe
 
 export interface SiteSettingsEntity {
   id: string;
-  logoMediaId: string | null;
-  defaultOgImageId: string | null;
+  logoMediaId: number | null;
+  defaultOgImageId: number | null;
   contactEmail: string;
   linkedinUrl: string;
   xUrl: string;
@@ -43,7 +43,7 @@ export interface BlogTagEntity {
 
 export interface BlogAuthorEntity {
   id: string;
-  avatarMediaId: string | null;
+  avatarMediaId: number | null;
   email: string;
   linkedinUrl: string;
   xUrl: string;
@@ -54,7 +54,7 @@ export interface BlogAuthorEntity {
 }
 
 export interface MediaFileEntity {
-  id: string;
+  id: number;
   storageKey: string;
   fileName: string;
   mimeType: string;
@@ -97,8 +97,8 @@ export interface BlogPostEntity {
   featured: boolean;
   publishedAt: string | null;
   scheduledAt: string | null;
-  coverMediaId: string | null;
-  ogImageMediaId: string | null;
+  coverMediaId: number | null;
+  ogImageMediaId: number | null;
   readingTime: number;
   difficulty: BlogDifficulty;
   tags: string[];
@@ -111,6 +111,7 @@ export interface BlogPostEntity {
 }
 
 export interface ResolvedBlogPost extends LocalizedResponseMeta, Omit<BlogPostEntity, "translations">, BlogPostTranslation {
+  slugByLocale: Partial<Record<LanguageCode, string>>;
   author: BlogAuthorEntity & { name: string; bio: string };
   category: BlogCategoryEntity & { name: string; slug: string; description: string };
   resolvedTags: Array<BlogTagEntity & { name: string; slug: string }>;

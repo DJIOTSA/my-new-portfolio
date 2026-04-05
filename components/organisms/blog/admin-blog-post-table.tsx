@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowUpDown, FilePenLine, Plus, Search } from "lucide-react";
+import { ArrowUpDown, Copy, FilePenLine, Plus, Search } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui";
 import { useAdminLocale } from "@/components/organisms/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
@@ -139,6 +139,7 @@ export function AdminBlogPostTable() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Author</TableHead>
                   <TableHead>Status</TableHead>
@@ -162,6 +163,20 @@ export function AdminBlogPostTable() {
                         </p>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <code className="rounded bg-gray-50 px-2 py-1 text-xs text-gray-700">{post.id}</code>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigator.clipboard?.writeText(post.id)}
+                        >
+                          <Copy className="mr-1 h-3 w-3" />
+                          {locale === "fr" ? "Copier" : "Copy"}
+                        </Button>
+                      </div>
+                    </TableCell>
                     <TableCell>{categoryName}</TableCell>
                     <TableCell>{authorName}</TableCell>
                     <TableCell>
@@ -180,7 +195,7 @@ export function AdminBlogPostTable() {
                 ))}
                 {!rows.length ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-sm text-gray-500">
+                    <TableCell colSpan={7} className="py-10 text-center text-sm text-gray-500">
                       {locale === "fr" ? "Aucun article ne correspond aux filtres." : "No posts match the current filters."}
                     </TableCell>
                   </TableRow>

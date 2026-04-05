@@ -1,9 +1,9 @@
-import { jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const siteSettings = pgTable("site_settings", {
   id: text("id").primaryKey(),
-  logoMediaId: text("logo_media_id"),
-  defaultOgImageId: text("default_og_image_id"),
+  logoMediaId: integer("logo_media_id"),
+  defaultOgImageId: integer("default_og_image_id"),
   contactEmail: text("contact_email").notNull(),
   linkedinUrl: text("linkedin_url").notNull(),
   xUrl: text("x_url").notNull(),

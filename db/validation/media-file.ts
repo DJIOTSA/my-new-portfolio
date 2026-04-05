@@ -2,7 +2,7 @@ import { z } from "zod";
 import { localizedTranslationSchema } from "@/db/validation/shared";
 
 export const mediaFileSchema = z.object({
-  id: z.string().min(1),
+  id: z.number().int().positive(),
   storageKey: z.string().min(1),
   fileName: z.string().min(1),
   mimeType: z.string().min(1),

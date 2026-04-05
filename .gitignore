@@ -21,3 +21,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+.next 
+db/migrations/meta/
+.next/
+.vercel

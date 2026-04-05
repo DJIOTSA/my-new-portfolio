@@ -1,16 +1,18 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LocaleSwitcher } from "@/components/molecules/locale-switcher";
+import { LocaleSwitcher, type LocaleOption } from "@/components/molecules/locale-switcher";
 
 interface BlogLocaleSwitcherProps {
-  currentLocale: "en" | "fr";
+  currentLocale: LocaleOption;
+  slugByLocale?: Partial<Record<LocaleOption, string>>;
   className?: string;
   variant?: "default" | "compact";
 }
 
 export function BlogLocaleSwitcher({
   currentLocale,
+  slugByLocale,
   className,
   variant = "default"
 }: BlogLocaleSwitcherProps) {
@@ -18,18 +20,23 @@ export function BlogLocaleSwitcher({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const switchLanguage = (nextLocale: "en" | "fr") => {
+  const switchLanguage = (nextLocale: LocaleOption) => {
     if (nextLocale === currentLocale) {
       return;
     }
 
-    const nextPath = pathname.startsWith(`/${currentLocale}/`)
-      ? `/${nextLocale}${pathname.slice(currentLocale.length + 1)}`
-      : pathname === `/${currentLocale}`
-        ? `/${nextLocale}`
-        : `/${nextLocale}/blog`;
     const queryString = searchParams.toString();
     const hash = typeof window === "undefined" ? "" : window.location.hash;
+    const isBlogDetailPath = pathname.startsWith(`/${currentLocale}/blog/`);
+    const localizedSlug = slugByLocale?.[nextLocale];
+
+    const nextPath = localizedSlug && isBlogDetailPath
+      ? `/${nextLocale}/blog/${localizedSlug}`
+      : pathname.startsWith(`/${currentLocale}/`)
+        ? `/${nextLocale}${pathname.slice(currentLocale.length + 1)}`
+        : pathname === `/${currentLocale}`
+          ? `/${nextLocale}`
+          : `/${nextLocale}/blog`;
 
     router.replace(`${nextPath}${queryString ? `?${queryString}` : ""}${hash}`);
   };
