@@ -215,8 +215,127 @@ const portfolioDocuments = [
   {
     sectionKey: "projects",
     data: [
-      { id: "project_1", orderIndex: 0, translations: { en: { title: "MOMO MANAGE", description: "A business management platform for small enterprises. Participated in development of both mobile and web applications, performing testing and code optimization, while collaborating with clients, marketing, UX, and development teams. Created workflows for tracking transactions, managing employees, and visualizing income and expenses.", tech: ["Business Management", "Mobile & Web", "Transaction Tracking"], category: "Business Platform" }, fr: { title: "MOMO MANAGE", description: "Plateforme de gestion d'entreprise pour petites structures, avec workflows de transactions, employés et finances.", tech: ["Gestion d'entreprise", "Mobile et web", "Suivi des transactions"], category: "Plateforme métier" } } },
-      { id: "project_2", orderIndex: 1, translations: { en: { title: "UltraCollecte", description: "A secure payment application for both web and mobile platforms. Contributed to implementing robust transaction handling, ensuring data integrity, and designing scalable services that support reliable and efficient payment workflows. Streamlines financial operations for institutions.", tech: ["Payment Processing", "Security", "Financial Management"], category: "FinTech" }, fr: { title: "UltraCollecte", description: "Application de paiement sécurisée web et mobile pour des workflows financiers fiables.", tech: ["Paiement", "Sécurité", "Gestion financière"], category: "FinTech" } } }
+      {
+        id: "project_1",
+        orderIndex: 0,
+        images: [],
+        translations: {
+          en: {
+            title: "MOMO MANAGE",
+            description:
+              "A business management platform for small enterprises. Participated in development of both mobile and web applications, performing testing and code optimization, while collaborating with clients, marketing, UX, and development teams. Created workflows for tracking transactions, managing employees, and visualizing income and expenses.",
+            tech: ["Business Management", "Mobile & Web", "Transaction Tracking"],
+            category: "Business Platform"
+          },
+          fr: {
+            title: "MOMO MANAGE",
+            description:
+              "Plateforme de gestion d'entreprise pour petites structures, avec workflows de transactions, employés et finances.",
+            tech: ["Gestion d'entreprise", "Mobile et web", "Suivi des transactions"],
+            category: "Plateforme métier"
+          }
+        }
+      },
+      {
+        id: "project_2",
+        orderIndex: 1,
+        images: [],
+        translations: {
+          en: {
+            title: "UltraCollecte",
+            description:
+              "A secure payment application for both web and mobile platforms. Contributed to implementing robust transaction handling, ensuring data integrity, and designing scalable services that support reliable and efficient payment workflows. Streamlines financial operations for institutions.",
+            tech: ["Payment Processing", "Security", "Financial Management"],
+            category: "FinTech"
+          },
+          fr: {
+            title: "UltraCollecte",
+            description: "Application de paiement sécurisée web et mobile pour des workflows financiers fiables.",
+            tech: ["Paiement", "Sécurité", "Gestion financière"],
+            category: "FinTech"
+          }
+        }
+      },
+      {
+        id: "project_3",
+        orderIndex: 2,
+        images: [],
+        translations: {
+          en: {
+            title: "Employee Goal Tracker (EGT)",
+            description:
+              "A system for managing employee goals, tasks, and performance evaluation. Developed web and mobile functionalities, performed testing and code optimization, and collaborated with teams to ensure workflow efficiency and actionable insights for performance tracking.",
+            tech: ["HR Management", "Performance Tracking", "Analytics"],
+            category: "Enterprise Software"
+          },
+          fr: {
+            title: "Employee Goal Tracker (EGT)",
+            description: "Système de gestion des objectifs, tâches et performances des employés.",
+            tech: ["RH", "Suivi de performance", "Analytics"],
+            category: "Logiciel d'entreprise"
+          }
+        }
+      },
+      {
+        id: "project_4",
+        orderIndex: 3,
+        images: [],
+        translations: {
+          en: {
+            title: "Yemba Named Entity Recognition (NER)",
+            description:
+              "An AI-powered system for identifying entities in the Yemba language. Contributed to developing web and mobile applications with intuitive interfaces for efficient textual data processing and entity recognition, showcasing expertise in NLP and AI integration.",
+            tech: ["AI/NLP", "Machine Learning", "Language Processing"],
+            category: "AI/ML"
+          },
+          fr: {
+            title: "Yemba Named Entity Recognition (NER)",
+            description: "Système IA d'identification d'entités en langue Yemba.",
+            tech: ["IA/NLP", "Machine learning", "Traitement du langage"],
+            category: "IA/ML"
+          }
+        }
+      },
+      {
+        id: "project_5",
+        orderIndex: 4,
+        images: [],
+        translations: {
+          en: {
+            title: "Au Boulot",
+            description:
+              "Built the administration dashboard for this task and project management platform on web and mobile. Implemented features for task assignment, progress tracking, and resource management, improving organizational efficiency and workflow transparency.",
+            tech: ["Project Management", "Dashboard", "Workflow Optimization"],
+            category: "Productivity"
+          },
+          fr: {
+            title: "Au Boulot",
+            description: "Dashboard d'administration pour une plateforme de gestion de tâches et projets.",
+            tech: ["Gestion de projet", "Dashboard", "Optimisation workflow"],
+            category: "Productivité"
+          }
+        }
+      },
+      {
+        id: "project_6",
+        orderIndex: 5,
+        images: [],
+        translations: {
+          en: {
+            title: "Mhulo Portfolio",
+            description:
+              "A professional portfolio website showcasing services and professional achievements. Contributed to both web and mobile design aspects, ensuring responsiveness and usability while collaborating with UX designers and stakeholders.",
+            tech: ["Web Design", "Responsive Design", "Portfolio"],
+            category: "Web Development"
+          },
+          fr: {
+            title: "Mhulo Portfolio",
+            description: "Portfolio professionnel présentant services et réalisations.",
+            tech: ["Web design", "Responsive design", "Portfolio"],
+            category: "Développement web"
+          }
+        }
+      }
     ]
   },
   {

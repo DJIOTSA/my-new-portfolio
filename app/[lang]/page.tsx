@@ -1,8 +1,9 @@
-import { Calendar, Code, ExternalLink, Globe, Heart, Linkedin, Mail, MapPin, Phone, Award, GraduationCap } from "lucide-react";
+import { Calendar, ExternalLink, Globe, Heart, Linkedin, Mail, MapPin, Phone, Award, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { getIconComponent } from "@/components/atoms/icon-map";
 import { ContactForm } from "@/components/organisms/portfolio/contact-form";
 import { PortfolioHeader } from "@/components/organisms/portfolio/header";
+import { ProjectCard } from "@/components/organisms/portfolio/project-card";
 import { getFeaturedBlogPosts } from "@/services/blog-service";
 import { getPortfolioContent } from "@/services/portfolio-service";
 
@@ -260,23 +261,7 @@ export default async function PortfolioPage({
           </div>
           <div className="grid lg:grid-cols-2 gap-8">
             {content.projects.map((project) => (
-              <div key={project.id} className="bg-gray-50 rounded-lg p-8 hover:shadow-xl transition-all duration-300 group">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">{project.title}</h3>
-                    <span className="text-sm font-medium text-blue-600 bg-blue-100 px-3 py-1 rounded-full">{project.category}</span>
-                  </div>
-                  <Code className="w-6 h-6 text-gray-400 group-hover:text-blue-700 transition-colors" />
-                </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">{project.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {project.tech.map((tech) => (
-                    <span key={tech} className="text-xs font-medium text-gray-700 bg-gray-200 px-2 py-1 rounded">
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <ProjectCard key={project.id} project={project} />
             ))}
           </div>
         </div>

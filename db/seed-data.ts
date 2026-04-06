@@ -573,6 +573,7 @@ export const seedProjects: ProjectEntity[] = [
   {
     id: "project_1",
     orderIndex: 0,
+    images: [],
     translations: {
       en: {
         title: "MOMO MANAGE",
@@ -591,6 +592,7 @@ export const seedProjects: ProjectEntity[] = [
   {
     id: "project_2",
     orderIndex: 1,
+    images: [],
     translations: {
       en: {
         title: "UltraCollecte",
@@ -609,6 +611,7 @@ export const seedProjects: ProjectEntity[] = [
   {
     id: "project_3",
     orderIndex: 2,
+    images: [],
     translations: {
       en: {
         title: "Employee Goal Tracker (EGT)",
@@ -627,6 +630,7 @@ export const seedProjects: ProjectEntity[] = [
   {
     id: "project_4",
     orderIndex: 3,
+    images: [],
     translations: {
       en: {
         title: "Yemba Named Entity Recognition (NER)",
