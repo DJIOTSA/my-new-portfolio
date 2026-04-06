@@ -123,6 +123,7 @@ export async function getPortfolioContent(language: string | undefined): Promise
         const result = resolveLocalizedValue(project.translations, effectiveRequestedLanguage, defaultLanguage);
         return {
           id: project.id,
+          images: project.images ?? [],
           requestedLanguage,
           effectiveLanguage: result.effectiveLanguage,
           isFallback: result.isFallback,

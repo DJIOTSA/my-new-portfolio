@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import type { ComponentProps, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, ComponentProps, ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import type { Control, UseFormRegister } from "react-hook-form";
 import { z } from "zod";
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "@/components/ui";
 import { useAdminLocale } from "@/components/organisms/admin/admin-locale-provider";
 import { useAdminQuery } from "@/hooks/use-admin-query";
-import { adminFetch } from "@/lib/auth/client";
+import { adminFetch, adminJsonFetch } from "@/lib/auth/client";
 import { queryKeys } from "@/lib/query/keys";
 import { portfolioAdminSchema } from "@/db/validation/portfolio-admin";
 
@@ -22,6 +22,7 @@ type StringArrayToFieldArray<T> =
   T;
 
 type PortfolioEditorFormValues = StringArrayToFieldArray<PortfolioFormValues>;
+type UploadUrlResponse = { uploadUrl: string; storageKey: string; publicUrl: string };
 
 function createStringFieldItems(values: string[] = []): StringFieldItem[] {
   return values.map((value) => ({ value }));
@@ -183,6 +184,7 @@ function toEditorValues(values: PortfolioFormValues): PortfolioEditorFormValues 
     })),
     projects: values.projects.map((entry) => ({
       ...entry,
+      images: createStringFieldItems(entry.images ?? []),
       translations: {
         en: {
           ...entry.translations.en,
@@ -254,6 +256,7 @@ function fromEditorValues(values: PortfolioEditorFormValues): PortfolioFormValue
     })),
     projects: values.projects.map((entry) => ({
       ...entry,
+      images: toStringList(entry.images),
       translations: {
         en: {
           ...entry.translations.en,
@@ -330,6 +333,7 @@ function normalizePortfolio(values: PortfolioFormValues): PortfolioFormValues {
     })),
     projects: values.projects.map((entry) => ({
       ...entry,
+      images: normalizeStringList(entry.images),
       translations: {
         en: {
           ...entry.translations.en,
@@ -389,6 +393,134 @@ function StringListField({
           </Button>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ProjectImagesField({
+  control,
+  projectIndex,
+  projectId
+}: {
+  control: Control<PortfolioEditorFormValues>;
+  projectIndex: number;
+  projectId: string;
+}) {
+  const imagesArray = useFieldArray({
+    control,
+    name: `projects.${projectIndex}.images` as const
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  function openFilePicker() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    event.target.value = "";
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const sanitizedProjectId = projectId.replace(/[^a-zA-Z0-9_-]/g, "-") || "project";
+      const uploadRequest = await adminJsonFetch<UploadUrlResponse>("/api/admin/media/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type || "application/octet-stream",
+          directory: `portfolio/projects/${sanitizedProjectId}`
+        })
+      });
+
+      const uploadResponse = await fetch(uploadRequest.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed with status ${uploadResponse.status}`);
+      }
+
+      imagesArray.append({ value: uploadRequest.publicUrl });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function moveUp(index: number) {
+    if (index === 0) return;
+    imagesArray.move(index, index - 1);
+  }
+
+  function moveDown(index: number) {
+    if (index === imagesArray.fields.length - 1) return;
+    imagesArray.move(index, index + 1);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <Label>Images</Label>
+          <p className="text-xs text-gray-500">Upload to Supabase Storage; first image is used as the cover.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" onClick={openFilePicker} disabled={uploading}>
+            {uploading ? "Uploading..." : "Upload image"}
+          </Button>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        </div>
+      </div>
+      {uploadError ? <p className="text-sm text-red-600">{uploadError}</p> : null}
+      {imagesArray.fields.length === 0 ? (
+        <p className="text-sm text-gray-500">No images yet. Upload to add the first one.</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {imagesArray.fields.map((field, index) => (
+            <div key={field.id} className="border rounded-md p-2 bg-white shadow-sm">
+              <div className="aspect-[16/9] overflow-hidden rounded bg-gray-100">
+                {field.value ? (
+                  <img src={field.value} alt={`Project image ${index + 1}`} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full bg-gray-100" />
+                )}
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-gray-500 truncate">{field.value}</span>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => moveUp(index)} disabled={index === 0}>
+                    Up
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => moveDown(index)}
+                    disabled={index === imagesArray.fields.length - 1}
+                  >
+                    Down
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => imagesArray.remove(index)}>
+                    Remove
+                  </Button>
+                </div>
+              </div>
+              {index === 0 ? <p className="text-[11px] text-blue-700 mt-1">Cover image</p> : null}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -460,6 +592,58 @@ function LabeledTextarea({
     <Field label={label} className={wrapperClassName}>
       <Textarea {...props} />
     </Field>
+  );
+}
+
+function ProjectCardFields({
+  control,
+  register,
+  index,
+  onRemove,
+  fieldId
+}: {
+  control: Control<PortfolioEditorFormValues>;
+  register: UseFormRegister<PortfolioEditorFormValues>;
+  index: number;
+  onRemove: () => void;
+  fieldId: string;
+}) {
+  const projectId = useWatch({ control, name: `projects.${index}.id` });
+
+  return (
+    <Card key={fieldId}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle>Project {index + 1}</CardTitle>
+        <Button type="button" variant="outline" onClick={onRemove}>
+          Remove
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <LabeledInput label="ID" {...register(`projects.${index}.id`)} />
+          <LabeledInput label="Order" type="number" {...register(`projects.${index}.orderIndex`, { valueAsNumber: true })} />
+        </div>
+        <ProjectImagesField control={control} projectIndex={index} projectId={projectId || `project_${index + 1}`} />
+        <TranslationTabs
+          enContent={
+            <div className="space-y-4">
+              <LabeledInput label="Title" {...register(`projects.${index}.translations.en.title`)} />
+              <LabeledTextarea label="Description" {...register(`projects.${index}.translations.en.description`)} />
+              <LabeledInput label="Category" {...register(`projects.${index}.translations.en.category`)} />
+              <StringListField control={control} register={register} name={`projects.${index}.translations.en.tech`} label="Tech stack" addLabel="Add tech" />
+            </div>
+          }
+          frContent={
+            <div className="space-y-4">
+              <LabeledInput label="Titre" {...register(`projects.${index}.translations.fr.title`)} />
+              <LabeledTextarea label="Description" {...register(`projects.${index}.translations.fr.description`)} />
+              <LabeledInput label="Categorie" {...register(`projects.${index}.translations.fr.category`)} />
+              <StringListField control={control} register={register} name={`projects.${index}.translations.fr.tech`} label="Technologies" addLabel="Ajouter une technologie" />
+            </div>
+          }
+        />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -987,6 +1171,7 @@ function ProjectsSection({
             projectsArray.append({
               id: `project_${Date.now()}`,
               orderIndex: projectsArray.fields.length,
+              images: [],
               translations: {
                 en: { title: "", description: "", tech: [], category: "" },
                 fr: { title: "", description: "", tech: [], category: "" }
@@ -999,38 +1184,14 @@ function ProjectsSection({
       </CardHeader>
       <CardContent className="space-y-4">
         {projectsArray.fields.map((field, index) => (
-          <Card key={field.id}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>Project {index + 1}</CardTitle>
-              <Button type="button" variant="outline" onClick={() => projectsArray.remove(index)}>
-                Remove
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <LabeledInput label="ID" {...register(`projects.${index}.id`)} />
-                <LabeledInput label="Order" type="number" {...register(`projects.${index}.orderIndex`, { valueAsNumber: true })} />
-              </div>
-              <TranslationTabs
-                enContent={
-                  <div className="space-y-4">
-                    <LabeledInput label="Title" {...register(`projects.${index}.translations.en.title`)} />
-                    <LabeledTextarea label="Description" {...register(`projects.${index}.translations.en.description`)} />
-                    <LabeledInput label="Category" {...register(`projects.${index}.translations.en.category`)} />
-                    <StringListField control={control} register={register} name={`projects.${index}.translations.en.tech`} label="Tech stack" addLabel="Add tech" />
-                  </div>
-                }
-                frContent={
-                  <div className="space-y-4">
-                    <LabeledInput label="Titre" {...register(`projects.${index}.translations.fr.title`)} />
-                    <LabeledTextarea label="Description" {...register(`projects.${index}.translations.fr.description`)} />
-                    <LabeledInput label="Categorie" {...register(`projects.${index}.translations.fr.category`)} />
-                    <StringListField control={control} register={register} name={`projects.${index}.translations.fr.tech`} label="Technologies" addLabel="Ajouter une technologie" />
-                  </div>
-                }
-              />
-            </CardContent>
-          </Card>
+          <ProjectCardFields
+            key={field.id}
+            fieldId={field.id}
+            control={control}
+            register={register}
+            index={index}
+            onRemove={() => projectsArray.remove(index)}
+          />
         ))}
       </CardContent>
     </Card>

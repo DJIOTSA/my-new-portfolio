@@ -126,6 +126,7 @@ export interface ProjectTranslation {
 export interface ProjectEntity {
   id: string;
   orderIndex: number;
+  images: string[];
   translations: Partial<Record<LanguageCode, ProjectTranslation>>;
 }
 
@@ -184,7 +185,7 @@ export interface PortfolioContent {
   certifications: Array<
     CertificationTranslation & { id: string; type: string } & LocalizedResponseMeta
   >;
-  projects: Array<ProjectTranslation & { id: string } & LocalizedResponseMeta>;
+  projects: Array<ProjectTranslation & { id: string; images: string[] } & LocalizedResponseMeta>;
   contact: {
     availabilityValue: string;
     contactLinks: Array<SocialLinkTranslation & { id: string; icon: string; href: string | null } & LocalizedResponseMeta>;
