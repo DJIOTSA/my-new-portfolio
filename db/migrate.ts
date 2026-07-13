@@ -11,7 +11,7 @@ function getMigrationFiles() {
 
   return fs
     .readdirSync(migrationsDirectory, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && /^\d{4}_.+\.sql$/.test(entry.name))
+    .filter((entry) => entry.isFile() && /^\d+_.+\.sql$/.test(entry.name))
     .map((entry) => entry.name)
     .sort((left, right) => left.localeCompare(right));
 }
